@@ -32,6 +32,7 @@ class Agent:
 # keep code wander algorithm, and create a way to switch between.
 
     def wander(self):
+        smallOffset = random.random()
         directions = {"S":((-1,2),(1,self.speed)),"SW":((-self.speed,-1),(1,self.speed)),"W":((-self.speed,-1),(-1,2)),"NW":((-self.speed,-1),(-self.speed,-1)),"N":((-1,2),(-self.speed,-1)),"NE":((1,self.speed),(-self.speed,-1)),"E":((1,self.speed),(-1,2)),"SE":((1,self.speed),(1,self.speed))} #((min x, max x)(min y, max y))
         directionsName = ("S","SW","W","NW","N","NE","E","SE") #possible directions
         if random.randrange(0,5) == 2: #move about once every 5 frames
@@ -43,8 +44,8 @@ class Agent:
                 if b > len(directionsName)-1: #if direction index is outside the list, move back to the start
                     b = 0
                 self.direction = directionsName[b]
-            self.move[0] = random.randrange(directions[self.direction][0][0],directions[self.direction][0][1]) #change relative x to a random number between min x and max x
-            self.move[1] = random.randrange(directions[self.direction][1][0],directions[self.direction][1][1]) #change relative y to a random number between min y and max y
+            self.move[0] = random.randrange(directions[self.direction][0][0],directions[self.direction][0][1]) + smallOffset #change relative x to a random number between min x and max x
+            self.move[1] = random.randrange(directions[self.direction][1][0],directions[self.direction][1][1]) + smallOffset#change relative y to a random number between min y and max y
         if self.x < 5 or self.x > WIDTH - 5 or self.y < 5 or self.y > HEIGHT - 5: #if cell is near the border of the screen, change direction
             if self.x < 5:
                 self.direction = "E"
@@ -54,8 +55,8 @@ class Agent:
                 self.direction = "S"
             elif self.y > HEIGHT - 5:
                 self.direction = "N"
-            self.move[0] = random.randrange(directions[self.direction][0][0],directions[self.direction][0][1]) #change relative x to a random number between min x and max x
-            self.move[1] = random.randrange(directions[self.direction][1][0],directions[self.direction][1][1]) #change relative x to a random number between min x and max x
+            self.move[0] = random.randrange(directions[self.direction][0][0],directions[self.direction][0][1]) + smallOffset #change relative x to a random number between min x and max x
+            self.move[1] = random.randrange(directions[self.direction][1][0],directions[self.direction][1][1]) + smallOffset#change relative x to a random number between min x and max x
         if self.move[0] != None: #add the relative coordinates to the cells coordinates
             self.x += self.move[0]
             self.y += self.move[1]
@@ -91,8 +92,8 @@ def gameLoop():
         for i in agents:
             i.wander()  # agent random walk
             i.draw()    # draw agent with update position
-            i.calcDistance()
-            print("##################")
+            # i.calcDistance()
+            # print("##################")
 
         pygame.display.update() 
         pygame.time.Clock().tick(FPS)
