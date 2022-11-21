@@ -22,6 +22,7 @@ class Agent:
     def __init__(self):
         self.x = random.randrange(10,WIDTH-10) # rand pos x
         self.y = random.randrange(10,HEIGHT-10) # rand pos y
+        self.pos = [self.x , self.y]
         self.speed = random.randrange(2,5) #cell speed
         self.move = [None, None] #realtive x and y coordinates to move to
         self.direction = None #movement direction
@@ -71,6 +72,10 @@ class Agent:
                 else: 
                     print(idx, math.sqrt((self.x - obj.x)**2 + (self.y - obj.y)**2)) # Calculates distance between self and other agents.
                     #pygame.draw.line(screen, (32,32,0), (self.x, self.y), (obj.x, obj.y))
+
+    def calcDistance2(self):
+        for idx, obj in enumerate(agents):
+            print(math.dist(obj.pos , self.pos))
         
 
 agents = []
@@ -92,7 +97,7 @@ def gameLoop():
         for i in agents:
             i.wander()  # agent random walk
             i.draw()    # draw agent with update position
-            # i.calcDistance()
+            i.calcDistance2()
             # print("##################")
 
         pygame.display.update() 
