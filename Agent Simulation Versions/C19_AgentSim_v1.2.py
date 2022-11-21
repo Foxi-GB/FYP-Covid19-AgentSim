@@ -10,10 +10,10 @@ import random
 
 ##### Variables #####
 
-WIDTH = 600
-HEIGHT = 600
+WIDTH = 1920
+HEIGHT = 1080
 FPS = 60
-pxlSize = 5
+pxlSize = 10
 screen = pygame.display.set_mode((WIDTH,HEIGHT))
 
 ##### Define Agent #####
@@ -26,9 +26,13 @@ class Agent:
         self.speed = random.randrange(2,5) #cell speed
         self.move = [None, None] #realtive x and y coordinates to move to
         self.direction = None #movement direction
+        self.infected = bool(random.getrandbits(1))
 
     def draw(self):
-        pygame.draw.circle(screen, (32, 32, 0), (self.x,self.y), pxlSize) #draw the cell
+        if(self.infected):
+            pygame.draw.circle(screen, (255, 0, 0), (self.x,self.y), pxlSize) #draw the cell
+        else:
+            pygame.draw.circle(screen, (32, 32, 32), (self.x,self.y), pxlSize) #draw the cell
 
 # keep code wander algorithm, and create a way to switch between.
 
@@ -75,11 +79,14 @@ class Agent:
 
     def calcDistance2(self):
         for idx, obj in enumerate(agents):
-            print(math.dist(obj.pos , self.pos))
-        
+            distance = math.sqrt((self.x - obj.x)**2 + (self.y - obj.y)**2) #math.dist(obj.pos , self.pos)
+            if(distance <= float(25) and distance != 0.0):
+                self.infected = bool(True)
+            # print(idx, distance, obj.infected)
+
 
 agents = []
-for i in range(10):
+for i in range(100):
     Agents = Agent()
     agents.append(Agents)
 
@@ -96,8 +103,9 @@ def gameLoop():
         
         for i in agents:
             i.wander()  # agent random walk
-            i.draw()    # draw agent with update position
             i.calcDistance2()
+            i.draw()    # draw agent with update position
+            
             # print("##################")
 
         pygame.display.update() 
