@@ -26,7 +26,7 @@ class Agent:
         self.speed = random.randrange(2,5) #cell speed
         self.move = [None, None] #realtive x and y coordinates to move to
         self.direction = None #movement direction
-        self.infected = bool(np.random.choice([0,1],1,p=[0.95,0.05]))
+        self.infected = bool(np.random.choice([0,1],1,p=[0.90,0.10]))
 
     def draw(self):
         if(self.infected):
@@ -81,12 +81,16 @@ class Agent:
         for idx, obj in enumerate(agents):
             distance = math.sqrt((self.x - obj.x)**2 + (self.y - obj.y)**2) #math.dist(obj.pos , self.pos)
             if(distance <= float(25) and distance != 0.0):
-                self.infected = bool(True)
+                if(obj.infected == bool(True)):
+                    self.infected = True
+                if(self.infected == bool(True)):
+                    obj.infected == True
+
             # print(idx, distance, obj.infected)
 
 
 agents = []
-for i in range(50):
+for i in range(30):
     Agents = Agent()
     agents.append(Agents)
 
