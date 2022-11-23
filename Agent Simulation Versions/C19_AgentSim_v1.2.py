@@ -10,8 +10,8 @@ import random
 
 ##### Variables #####
 
-WIDTH = 1920
-HEIGHT = 1080
+WIDTH = 1000
+HEIGHT = 700
 FPS = 60
 pxlSize = 10
 screen = pygame.display.set_mode((WIDTH,HEIGHT))
@@ -26,7 +26,7 @@ class Agent:
         self.speed = random.randrange(2,5) #cell speed
         self.move = [None, None] #realtive x and y coordinates to move to
         self.direction = None #movement direction
-        self.infected = bool(random.getrandbits(1))
+        self.infected = bool(np.random.choice([0,1],1,p=[0.95,0.05]))
 
     def draw(self):
         if(self.infected):
@@ -86,7 +86,7 @@ class Agent:
 
 
 agents = []
-for i in range(100):
+for i in range(50):
     Agents = Agent()
     agents.append(Agents)
 
