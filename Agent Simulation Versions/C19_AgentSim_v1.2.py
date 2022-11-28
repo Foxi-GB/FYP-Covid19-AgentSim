@@ -7,6 +7,7 @@ from pygame.locals import *
 import time
 import numpy as np
 import random
+from csv import writer
 
 ##### Variables #####
 
@@ -19,7 +20,9 @@ screen = pygame.display.set_mode((WIDTH,HEIGHT))
 ##### Define Agent #####
 
 class Agent: 
-    def __init__(self):
+
+    def __init__(self, id):
+        self.id = id
         self.x = random.randrange(10,WIDTH-10) # rand pos x
         self.y = random.randrange(10,HEIGHT-10) # rand pos y
         self.pos = [self.x , self.y]
@@ -88,15 +91,22 @@ class Agent:
 
             # print(idx, distance, obj.infected)
 
+    def getID(self):
+        return self.id
+
+    def getStatus(self):
+        return self.infected
+
 
 agents = []
-for i in range(30):
-    Agents = Agent()
+for i in range(100):
+    Agents = Agent(id = i)
     agents.append(Agents)
 
 ##### Game Loop #####
 
 def gameLoop(): 
+    tStep = 0 
     while True:
         for event in pygame.event.get():
             if event.type == QUIT:
@@ -105,11 +115,20 @@ def gameLoop():
 
         screen.fill((255, 255, 255))
         
-        for i in agents:
+        for idx, i in enumerate(agents):
             i.wander()  # agent random walk
             i.calcDistance2()
-            i.draw()    # draw agent with update position
+            #i.draw()    # draw agent with update position
+            List = [tStep,i.getID(),i.getStatus()]
+
+            if(idx == len(agents) - 1):
+                tStep = tStep + 1
             
+            with open('c19_testing.csv', 'a', newline ='') as f_object:
+                writer_object = writer(f_object)
+                writer_object.writerow(List)
+                f_object.close()
+
             # print("##################")
 
         pygame.display.update() 
