@@ -118,7 +118,7 @@ def gameLoop():
         for idx, i in enumerate(agents):
             i.wander()  # agent random walk
             i.calcDistance2()
-            #i.draw()    # draw agent with update position
+            i.draw()    # draw agent with update position
             List = [tStep,i.getID(),i.getStatus()]
 
             if(idx == len(agents) - 1):
