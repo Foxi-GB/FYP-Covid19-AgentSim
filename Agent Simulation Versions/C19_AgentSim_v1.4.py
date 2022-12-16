@@ -27,7 +27,8 @@ class Agent:
         self.image = image
         self.rect = image.get_rect(center=position)
         self.center = pygame.Vector2(self.rect.center)
-
+        self.x = self.rect.center[0]
+        self.y = self.rect.center[1]
         self.vector = pygame.Vector2()
         self.vector.from_polar((1, 0))
         self.turnSpeed = 40
@@ -37,30 +38,15 @@ class Agent:
         # Agent Infected
         self.infected = bool(np.random.choice([0,1],1,p=[0.90,0.10]))
 
-    #def draw(self):
+    # def draw(self):
         
-        # if(self.infected):
-        #     pygame.draw.circle(screen, (255, 0, 0), (self.x,self.y), agentSize) 
-        # else:
-        #     pygame.draw.circle(screen, (32, 32, 32), (self.x,self.y), agentSize)
+    #     # if(self.infected):
+    #     #     pygame.draw.circle(screen, (255, 0, 0), (self.x,self.y), agentSize) 
+    #     # else:
+    #     #     pygame.draw.circle(screen, (32, 32, 32), (self.x,self.y), agentSize)
         
-        #Agent.drawCone(self.x, self.y)
+    #     Agent.drawCone(self.x, self.y)
     
-    # def drawCone(agentX, agentY, agentRotation):
-    #     # First Attempt - Vector Circles to Draw XY coordinates
-    #     # Rotation point for polygon X
-    #     vecX = pygame.math.Vector2(0, 0).rotate(agentRotation)
-    #     ptX_x, ptX_y = agentX + vecX.x, agentY + vecX.y
-
-    #     # Rotation point for polygon Y
-    #     vecY = pygame.math.Vector2(0, 25).rotate(agentRotation - 10)
-    #     ptY_x, ptY_y = ptX_x + vecY.x, ptX_y + vecY.y
-
-    #     # Rotation point for polygon Y
-    #     vecZ = pygame.math.Vector2(0, 25).rotate(agentRotation + 10)
-    #     ptZ_x, ptZ_y = ptX_x + vecZ.x, ptX_y + vecZ.y
-
-    #     pygame.draw.polygon(screen, (255,0,0), ((ptX_x, ptX_y), (ptY_x, ptY_y), (ptZ_x, ptZ_y))) # Draw Cone
 
     def move(self, delta):
         rotate = 0
@@ -89,19 +75,32 @@ class Agent:
         self.x = self.rect.center[0]
         self.y = self.rect.center[1]
 
-        if self.x < 5 or self.x > WIDTH - 5 or self.y < 5 or self.y > HEIGHT - 5:
-            if self.x < 5:
+        if self.x < 10 or self.x > WIDTH - 10 or self.y < 10 or self.y > HEIGHT - 10:
+            if self.x < 10:
                 self.angle += 90
-            elif self.x > WIDTH -5:
+            elif self.x > WIDTH -10:
                 self.angle -= 90
-            elif self.y < 5:
+            elif self.y < 10:
                 self.angle += 90
-            elif self.y > HEIGHT -5: 
+            elif self.y > HEIGHT -10: 
                 self.angle -= 90
-        
-        print(self.image.get_rect(center=self.rect.center))
 
-        #print(rotate)
+
+    def drawCone(self, agentX, agentY, agentRotation):
+        # First Attempt - Vector Circles to Draw XY coordinates
+        # Rotation point for polygon X
+        vecX = pygame.math.Vector2(0, 0).rotate(agentRotation)
+        ptX_x, ptX_y = agentX + vecX.x, agentY + vecX.y
+
+        # Rotation point for polygon Y
+        vecY = pygame.math.Vector2(0, 25).rotate(agentRotation - 10)
+        ptY_x, ptY_y = ptX_x + vecY.x, ptX_y + vecY.y
+
+        # Rotation point for polygon Y
+        vecZ = pygame.math.Vector2(0, 25).rotate(agentRotation + 10)
+        ptZ_x, ptZ_y = ptX_x + vecZ.x, ptX_y + vecZ.y
+
+        pygame.draw.polygon(screen, (255,0,0), ((ptX_x, ptX_y), (ptY_x, ptY_y), (ptZ_x, ptZ_y))) # Draw Cone
 
 
 class Simulation:
@@ -125,7 +124,7 @@ class Simulation:
         
 
         self.agents = []
-        for i in range(1):
+        for i in range(5):
             Agents = Agent(self.images.player, [random.randrange(10, WIDTH -10), random.randrange(10, HEIGHT -10)])
             self.agents.append(Agents)
 
@@ -140,7 +139,7 @@ class Simulation:
 
             for idx, i in enumerate(self.agents):
                 self.surface.blit(self.agents[idx].image, self.agents[idx].rect)
-                # i.draw()
+                i.drawCone(self.agents[idx].x, self.agents[idx].y, self.agents[idx].angle - 90)
                 i.move(self.delta)
             pygame.display.update() 
             pygame.time.Clock().tick(FPS)
