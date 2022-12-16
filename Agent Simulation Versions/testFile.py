@@ -18,7 +18,7 @@ class Player(pygame.sprite.Sprite):
         super().__init__()
         self.oimage = image
         self.image = image
-        #self.rect = image.get_rect(center=position)
+        self.rect = image.get_rect(center=position)
         self.center = pygame.Vector2(self.rect.center)
         self.vector = pygame.Vector2()
         self.vector.from_polar((1, 0))

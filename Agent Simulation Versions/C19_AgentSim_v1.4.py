@@ -29,62 +29,58 @@ class Agent:
 
         self.oimage = image
         self.image = image
-        self.rect = image.get_rect(center = position)
+        self.rect = image.get_rect(center=position)
         self.center = pygame.Vector2(self.rect.center)
-
-        # Agent Rotation
-        self.rotation = 0 
-        self.angle = 0 
-        self.speed = 50
-        self.turnSpeed = 0
         self.vector = pygame.Vector2()
         self.vector.from_polar((1, 0))
+        self.turnSpeed = 40
+        self.speed = 30
+        self.angle = 0
 
         # Agent Infected
         self.infected = bool(np.random.choice([0,1],1,p=[0.90,0.10]))
 
-    def draw(self):
+    #def draw(self):
         
         # if(self.infected):
         #     pygame.draw.circle(screen, (255, 0, 0), (self.x,self.y), agentSize) 
         # else:
         #     pygame.draw.circle(screen, (32, 32, 32), (self.x,self.y), agentSize)
         
-        Agent.drawCone(self.x, self.y, self.rotation)
+        #Agent.drawCone(self.x, self.y)
     
-    def drawCone(agentX, agentY, agentRotation):
-        # First Attempt - Vector Circles to Draw XY coordinates
-        # Rotation point for polygon X
-        vecX = pygame.math.Vector2(0, 0).rotate(agentRotation)
-        ptX_x, ptX_y = agentX + vecX.x, agentY + vecX.y
+    # def drawCone(agentX, agentY, agentRotation):
+    #     # First Attempt - Vector Circles to Draw XY coordinates
+    #     # Rotation point for polygon X
+    #     vecX = pygame.math.Vector2(0, 0).rotate(agentRotation)
+    #     ptX_x, ptX_y = agentX + vecX.x, agentY + vecX.y
 
-        # Rotation point for polygon Y
-        vecY = pygame.math.Vector2(0, 25).rotate(agentRotation - 10)
-        ptY_x, ptY_y = ptX_x + vecY.x, ptX_y + vecY.y
+    #     # Rotation point for polygon Y
+    #     vecY = pygame.math.Vector2(0, 25).rotate(agentRotation - 10)
+    #     ptY_x, ptY_y = ptX_x + vecY.x, ptX_y + vecY.y
 
-        # Rotation point for polygon Y
-        vecZ = pygame.math.Vector2(0, 25).rotate(agentRotation + 10)
-        ptZ_x, ptZ_y = ptX_x + vecZ.x, ptX_y + vecZ.y
+    #     # Rotation point for polygon Y
+    #     vecZ = pygame.math.Vector2(0, 25).rotate(agentRotation + 10)
+    #     ptZ_x, ptZ_y = ptX_x + vecZ.x, ptX_y + vecZ.y
 
-        pygame.draw.polygon(screen, (255,0,0), ((ptX_x, ptX_y), (ptY_x, ptY_y), (ptZ_x, ptZ_y))) # Draw Cone
+    #     pygame.draw.polygon(screen, (255,0,0), ((ptX_x, ptX_y), (ptY_x, ptY_y), (ptZ_x, ptZ_y))) # Draw Cone
 
-    def move(self):
-        self.rotation = 0
+    def move(self, delta):
+        rotate = 0
         forward = 0
-        delta = 0
 
         if(np.random.choice([0,1],1,p=[0.50,0.50]) == 0):
-            self.rotation -= 5
+            rotate -= 5
         else:
-            self.rotation += 5
+            rotate += 5
 
         if(np.random.choice([0,1],1,p=[0.90,0.10]) == 0):
-            forward += 1
+            forward += 5
         else:
-            forward -= 1
+            forward -= 5
 
-        if self.rotation != 0:
-            self.angle += delta * self.turnSpeed * self.rotation
+        if rotate != 0:
+            self.angle += delta * self.turnSpeed * rotate
             self.image = pygame.transform.rotate(self.oimage, -self.angle)
             self.rect = self.image.get_rect(center=self.rect.center)
             self.vector.from_polar((1, self.angle))
@@ -96,6 +92,8 @@ class Agent:
 class Simulation:
 
     def __init__(self, title, fps, size, flags):
+        self.clock = pygame.time.Clock()
+
         pygame.display.set_caption(title)
         self.surface = pygame.display.set_mode(size, flags)
 
@@ -103,7 +101,9 @@ class Simulation:
         self.height = HEIGHT
         self.screen = screen
         self.fps = fps
-
+        self.delta = 0
+        
+        
         self.rect = self.surface.get_rect()
 
         self.images = Image()
@@ -111,7 +111,7 @@ class Simulation:
 
         self.agents = []
         for i in range(3):
-            Agents = Agent(self.images.player, self.rect.center)
+            Agents = Agent(self.images.player, [random.randrange(10, WIDTH -10), random.randrange(10, HEIGHT -10)])
             self.agents.append(Agents)
 
     def simLoop(self):
@@ -120,15 +120,18 @@ class Simulation:
                 if event.type == QUIT:
                     pygame.quit()
                     sys.exit()
-
+                    
             self.surface.fill('white')
 
             for idx, i in enumerate(self.agents):
-                self.surface.blit(self.agents[idx].image, self.agents[idx].pos)
-                i.draw()
-                i.move()
+                self.surface.blit(self.agents[idx].image, self.agents[idx].rect)
+                # i.draw()
+                i.move(self.delta)
             pygame.display.update() 
             pygame.time.Clock().tick(FPS)
+            pygame.display.flip()
+            # Smooth Movement
+            self.delta = self.clock.tick(self.fps) * 0.001
 
 sim = Simulation("Covid 19 Agent Simulation", 60, (800,600), 0)
 sim.simLoop()
