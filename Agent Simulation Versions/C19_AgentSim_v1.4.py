@@ -5,7 +5,7 @@ import numpy as np
 WIDTH = 800
 HEIGHT = 600
 FPS = 60
-agentSize = 5
+agentSize = 10
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 
 class Agent:
@@ -23,10 +23,27 @@ class Agent:
 
     def draw(self):
         if(self.infected):
-            pygame.draw.circle(screen, (255, 0, 0), (self.x,self.y), agentSize) #draw the cell
+            pygame.draw.circle(screen, (255, 0, 0), (self.x,self.y), agentSize) 
         else:
-            pygame.draw.circle(screen, (32, 32, 32), (self.x,self.y), agentSize) #draw the cell
+            pygame.draw.circle(screen, (32, 32, 32), (self.x,self.y), agentSize)
+        
+        Agent.drawCone(self.x, self.y, self.rotation)
+    
+    def drawCone(agentX, agentY, agentRotation):
+        # First Attempt - Vector Circles to Draw XY coordinates
+        # Rotation point for polygon X
+        vecX = pygame.math.Vector2(0, 0).rotate(agentRotation)
+        ptX_x, ptX_y = agentX + vecX.x, agentY + vecX.y
 
+        # Rotation point for polygon Y
+        vecY = pygame.math.Vector2(0, 25).rotate(agentRotation - 10)
+        ptY_x, ptY_y = ptX_x + vecY.x, ptX_y + vecY.y
+
+        # Rotation point for polygon Y
+        vecZ = pygame.math.Vector2(0, 25).rotate(agentRotation + 10)
+        ptZ_x, ptZ_y = ptX_x + vecZ.x, ptX_y + vecZ.y
+
+        pygame.draw.polygon(screen, (255,0,0), ((ptX_x, ptX_y), (ptY_x, ptY_y), (ptZ_x, ptZ_y))) # Draw Cone
 
 class Simulation:
 
