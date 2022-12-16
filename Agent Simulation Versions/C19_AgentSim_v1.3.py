@@ -79,7 +79,7 @@ for i in range(3):
 ##### Game Loop #####
 
 def gameLoop(): 
-    tStep = 0 
+    tStep = 0  
     while True:
         for event in pygame.event.get():
             if event.type == QUIT:
