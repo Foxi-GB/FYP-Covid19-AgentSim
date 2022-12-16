@@ -37,6 +37,8 @@ class Agent:
         else:
             pygame.draw.circle(screen, (32, 32, 32), (self.x,self.y), pxlSize) #draw the cell
 
+        
+
 # keep code wander algorithm, and create a way to switch between.
 
     def wander(self):

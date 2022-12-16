@@ -43,11 +43,11 @@ class Agent:
         ptX_x, ptX_y = self.x + vecX.x, self.y + vecX.y
 
         # Rotation point for polygon Y
-        vecY = pygame.math.Vector2(0, 100).rotate(self.rotation - 10)
+        vecY = pygame.math.Vector2(0, 25).rotate(self.rotation - 10)
         ptY_x, ptY_y = ptX_x + vecY.x, ptX_y + vecY.y
 
         # Rotation point for polygon Y
-        vecZ = pygame.math.Vector2(0, 100).rotate(self.rotation + 10)
+        vecZ = pygame.math.Vector2(0, 25).rotate(self.rotation + 10)
         ptZ_x, ptZ_y = ptX_x + vecZ.x, ptX_y + vecZ.y
 
 
@@ -68,14 +68,7 @@ class Agent:
 
 
     def move(self):
-        speed = 5
-
-        rand = random.randrange(0,1)
-        if(rand == 0):
-            self.rotation += random.randrange(-90,90)
-
-        self.x += cos(self.rotation) * speed
-        self.y += sin(self.rotation) * speed
+        self.rotation += random.randrange(-90,90)
 
 
 agents = []
