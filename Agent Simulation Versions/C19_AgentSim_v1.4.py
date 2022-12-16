@@ -23,19 +23,16 @@ class Agent:
     def __init__(self, image, position):
 
         # Agent Coordinates
-        self.x = random.randrange(10, WIDTH -10)
-        self.y = random.randrange(10, HEIGHT -10)
-        self.pos = [self.x, self.y]
-
         self.oimage = image
         self.image = image
         self.rect = image.get_rect(center=position)
         self.center = pygame.Vector2(self.rect.center)
+
         self.vector = pygame.Vector2()
         self.vector.from_polar((1, 0))
         self.turnSpeed = 40
         self.speed = 30
-        self.angle = 0
+        self.angle = 90
 
         # Agent Infected
         self.infected = bool(np.random.choice([0,1],1,p=[0.90,0.10]))
@@ -89,6 +86,24 @@ class Agent:
             self.center += forward * self.vector * delta * self.speed
             self.rect.center = self.center
 
+        self.x = self.rect.center[0]
+        self.y = self.rect.center[1]
+
+        if self.x < 5 or self.x > WIDTH - 5 or self.y < 5 or self.y > HEIGHT - 5:
+            if self.x < 5:
+                self.angle += 90
+            elif self.x > WIDTH -5:
+                self.angle -= 90
+            elif self.y < 5:
+                self.angle += 90
+            elif self.y > HEIGHT -5: 
+                self.angle -= 90
+        
+        print(self.image.get_rect(center=self.rect.center))
+
+        #print(rotate)
+
+
 class Simulation:
 
     def __init__(self, title, fps, size, flags):
@@ -110,7 +125,7 @@ class Simulation:
         
 
         self.agents = []
-        for i in range(3):
+        for i in range(1):
             Agents = Agent(self.images.player, [random.randrange(10, WIDTH -10), random.randrange(10, HEIGHT -10)])
             self.agents.append(Agents)
 
@@ -133,5 +148,5 @@ class Simulation:
             # Smooth Movement
             self.delta = self.clock.tick(self.fps) * 0.001
 
-sim = Simulation("Covid 19 Agent Simulation", 60, (800,600), 0)
+sim = Simulation("Covid 19 Agent Simulation", 60, (WIDTH,HEIGHT), 0)
 sim.simLoop()
