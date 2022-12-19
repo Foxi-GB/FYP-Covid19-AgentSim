@@ -145,11 +145,12 @@ class Simulation:
 
             for idx, i in enumerate(self.agents):
 
-                if(self.agents[idx].infected == True):
+                if(i.infected == True):
                     i.oimage = self.images.updateAgent()
-                i.move(self.delta)
                 self.surface.blit(i.image, i.rect)
                 i.drawCone(i.x, i.y, i.angle - 90)
+
+                i.move(self.delta)
             
             
             pygame.display.update() 
