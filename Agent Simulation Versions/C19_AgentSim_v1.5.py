@@ -81,9 +81,12 @@ class Agent:
             elif self.y > HEIGHT -10: 
                 self.angle -= 90
 
+    def infectProbability(self):
+        return True
+
 class Cone:
     def __init__(self, idx):
-        self.aIdx = idx
+        self.idx = idx
         self.image = self.drawCone()
         self.ocone = self.drawCone()
 
@@ -172,12 +175,31 @@ class Simulation:
 
                 if(a.infected == True):
                     a.oimage = self.images.updateAgent()
-            
                 self.surface.blit(a.image, a.rect)
+                agentMask = pygame.mask.from_surface(a.image)
                 
                 rI, rect = c.rotate4(self.surface, c.image, a.center, (0,4), -a.angle)
-                
                 self.surface.blit(rI, rect)
+
+                #print("main", idx, c.cIdx)
+
+                for n, xc in enumerate(self.cones):
+                    #print("sub", n, xc.cIdx, c.cIdx)
+                    if(idx == n):
+                        print("same")
+                    else:
+                        if(a.rect.colliderect(xc.rect)):
+                            print("collision")
+                            coneMask = pygame.mask.from_surface(xc.image)
+
+                            offsetX = xc.rect.x - a.rect.x
+                            offsetY = xc.rect.y - a.rect.y
+
+                            overlap = agentMask.overlap_mask(coneMask, (offsetX, offsetY))
+                            if overlap:
+                                a.infected = a.infectProbability()
+                                #print(n, 'The two masks overlap!', overlap)
+                        
                 a.move(self.delta)
             
             pygame.display.update() 

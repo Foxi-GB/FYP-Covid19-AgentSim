@@ -46,16 +46,6 @@ class Agent:
         # Agent Infected
         self.infected = bool(np.random.choice([0,1],1,p=[0.90,0.10]))
 
-    # def draw(self):
-        
-    #     # if(self.infected):
-    #     #     pygame.draw.circle(screen, (255, 0, 0), (self.x,self.y), agentSize) 
-    #     # else:
-    #     #     pygame.draw.circle(screen, (32, 32, 32), (self.x,self.y), agentSize)
-        
-    #     Agent.drawCone(self.x, self.y)
-    
-
     def move(self, delta):
         rotate = 0
         forward = 0
@@ -94,7 +84,7 @@ class Agent:
                 self.angle -= 90
 
     def drawCone(self, agentX, agentY, agentRotation):
-        # First Attempt - Vector Circles to Draw XY coordinates
+
         # Rotation point for polygon X
         vecX = pygame.math.Vector2(0, 0).rotate(agentRotation)
         ptX_x, ptX_y = agentX + vecX.x, agentY + vecX.y
