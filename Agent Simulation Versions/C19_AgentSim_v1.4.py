@@ -10,14 +10,22 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 
 class Image: 
     def __init__(self):
-        self.player = self.create_player()
-
-    def create_player(self):
+        self.drawAgent = self.drawAgent()
+    
+    def drawAgent(self):
         surface = pygame.Surface((20, 20), pygame.SRCALPHA, 32)
         surface = surface.convert_alpha()
         pygame.draw.circle(surface, "black", (10,10), 10)
         pygame.draw.line(surface, "green", (10, 10), (20, 10))
         return surface
+
+    def updateAgent(self):
+        surface = pygame.Surface((20, 20), pygame.SRCALPHA, 32)
+        surface = surface.convert_alpha()
+        pygame.draw.circle(surface, "red", (10,10), 10)
+        pygame.draw.line(surface, "green", (10, 10), (20, 10))
+        return surface
+    
 
 class Agent:
     def __init__(self, image, position):
@@ -85,7 +93,6 @@ class Agent:
             elif self.y > HEIGHT -10: 
                 self.angle -= 90
 
-
     def drawCone(self, agentX, agentY, agentRotation):
         # First Attempt - Vector Circles to Draw XY coordinates
         # Rotation point for polygon X
@@ -102,6 +109,7 @@ class Agent:
 
         pygame.draw.polygon(screen, (255,0,0), ((ptX_x, ptX_y), (ptY_x, ptY_y), (ptZ_x, ptZ_y))) # Draw Cone
 
+    
 
 class Simulation:
 
@@ -117,16 +125,14 @@ class Simulation:
         self.fps = fps
         self.delta = 0
         
-        
         self.rect = self.surface.get_rect()
 
         self.images = Image()
         
-
         self.agents = []
-        for i in range(5):
-            Agents = Agent(self.images.player, [random.randrange(10, WIDTH -10), random.randrange(10, HEIGHT -10)])
-            self.agents.append(Agents)
+        for i in range(100):
+            uAgent = Agent(self.images.drawAgent, [random.randrange(10, WIDTH -10), random.randrange(10, HEIGHT -10)])
+            self.agents.append(uAgent)
 
     def simLoop(self):
         while True:
@@ -138,9 +144,14 @@ class Simulation:
             self.surface.fill('white')
 
             for idx, i in enumerate(self.agents):
-                self.surface.blit(self.agents[idx].image, self.agents[idx].rect)
-                i.drawCone(self.agents[idx].x, self.agents[idx].y, self.agents[idx].angle - 90)
+
+                if(self.agents[idx].infected == True):
+                    i.oimage = self.images.updateAgent()
                 i.move(self.delta)
+                self.surface.blit(i.image, i.rect)
+                i.drawCone(i.x, i.y, i.angle - 90)
+            
+            
             pygame.display.update() 
             pygame.time.Clock().tick(FPS)
             pygame.display.flip()
