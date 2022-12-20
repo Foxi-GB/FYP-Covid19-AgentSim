@@ -82,7 +82,8 @@ class Agent:
                 self.angle -= 90
 
     def infectProbability(self):
-        return True
+        infects = bool(np.random.choice([0,1],1,p=[0.50,0.50]))
+        return infects
 
 class Cone:
     def __init__(self, idx):
