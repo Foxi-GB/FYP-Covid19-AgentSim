@@ -155,7 +155,7 @@ class Simulation:
         self.cones = []
         self.agents = []
 
-        for i in range(4):
+        for i in range(25):
             uAgent = Agent(self.images.drawAgent, [random.randrange(10, WIDTH -10), random.randrange(10, HEIGHT -10)])
             self.agents.append(uAgent)
 
@@ -197,7 +197,8 @@ class Simulation:
 
                         overlap = agentMask.overlap_mask(coneMask, (offsetX, offsetY))
                         if overlap:
-                            a.infected = a.infectProbability()
+                            if(self.agents[xc.idx].infected == True):
+                                a.infected = a.infectProbability()
                             #print(n, 'The two masks overlap!', overlap)
                         
                 a.move(self.delta)
