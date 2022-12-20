@@ -130,6 +130,7 @@ class Cone:
         rotated_image_center = (origin[0] - rotated_offset.x, origin[1] - rotated_offset.y)
         rotated_image = pygame.transform.rotate(image, angle)
         rotated_image_rect = rotated_image.get_rect(center = rotated_image_center)
+        self.rect = rotated_image_rect
         return rotated_image, rotated_image_rect
     
 
@@ -154,7 +155,7 @@ class Simulation:
         self.cones = []
         self.agents = []
 
-        for i in range(5):
+        for i in range(50):
             uAgent = Agent(self.images.drawAgent, [random.randrange(10, WIDTH -10), random.randrange(10, HEIGHT -10)])
             self.agents.append(uAgent)
 
@@ -180,25 +181,25 @@ class Simulation:
                 
                 rI, rect = c.rotate4(self.surface, c.image, a.center, (0,4), -a.angle)
                 self.surface.blit(rI, rect)
+                agentRect = a.rect
 
                 #print("main", idx, c.cIdx)
 
                 for n, xc in enumerate(self.cones):
                     #print("sub", n, xc.cIdx, c.cIdx)
-                    if(idx == n):
-                        print("same")
-                    else:
-                        if(a.rect.colliderect(xc.rect)):
-                            print("collision")
-                            coneMask = pygame.mask.from_surface(xc.image)
+                
+                    if(agentRect.colliderect(xc.rect) and idx != xc.idx):
+                        print("collision")
+                        a.infected = a.infectProbability()
+                        # coneMask = pygame.mask.from_surface(xc.image)
 
-                            offsetX = xc.rect.x - a.rect.x
-                            offsetY = xc.rect.y - a.rect.y
+                        # offsetX = xc.rect.x - a.rect.x
+                        # offsetY = xc.rect.y - a.rect.y
 
-                            overlap = agentMask.overlap_mask(coneMask, (offsetX, offsetY))
-                            if overlap:
-                                a.infected = a.infectProbability()
-                                #print(n, 'The two masks overlap!', overlap)
+                        # overlap = agentMask.overlap_mask(coneMask, (offsetX, offsetY))
+                        # if overlap:
+                        #     a.infected = a.infectProbability()
+                        #     #print(n, 'The two masks overlap!', overlap)
                         
                 a.move(self.delta)
             
