@@ -4,11 +4,15 @@ import numpy as np
 
 WIDTH = 800
 HEIGHT = 600
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
 FPS = 60
 agentSize = 10
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
+breathWidth = 50
+breathLength = 50
 
 class Image: 
+    # Draws Agent
+
     def __init__(self):
         self.drawAgent = self.drawAgent()
     
@@ -28,6 +32,9 @@ class Image:
     
 
 class Agent:
+
+    # Contains information about Agent
+
     def __init__(self, image, position):
 
         # Agent Coordinates
@@ -44,7 +51,7 @@ class Agent:
         self.angle = -90
 
         # Agent Infected
-        self.infected = bool(np.random.choice([0,1],1,p=[0.90,0.10]))
+        self.infected = bool(np.random.choice([0,1],1,p=[0.50,0.50]))
 
     def move(self, delta):
         rotate = 0
@@ -86,6 +93,9 @@ class Agent:
         return infects
 
 class Cone:
+
+    # Contains cone information, draws cone and rotates cone with agent
+
     def __init__(self, idx):
         self.idx = idx
         self.image = self.drawCone()
@@ -99,12 +109,16 @@ class Cone:
 
 
     def drawCone(self):
-        surface = pygame.Surface(((agentSize * 2), agentSize ), pygame.SRCALPHA, 32)
+        # Draws surface and then draws cone within surface.
+        # Surface size is Width x Height 
+
+        surface = pygame.Surface(((breathWidth), breathLength ), pygame.SRCALPHA, 32)
+        surface.fill("orange")
         surface = surface.convert_alpha()
-        pygame.draw.polygon(surface, "blue", ((0,5), (20,0), (20,10)))
-        pygame.draw.circle(surface, "red", (0,0), 1)
+        pygame.draw.polygon(surface, "blue", ((0,breathWidth/2), (breathWidth,0), (breathWidth,breathLength)))
         return surface
     
+    # Previous Trials
     def rotate(self, angle):
         self.angle = angle
         self.image = pygame.transform.rotate(self.ocone, -self.angle)
@@ -124,8 +138,11 @@ class Cone:
         rect.center = pivot
         return image, rect
 
+    # Working Rotation Code
     def rotate4(self, surf, image, origin, pivot, angle):
-        image_rect = image.get_rect(topleft = (origin[0] - pivot[0], origin[1]-pivot[1]))
+        # Rotate cone using 
+
+        image_rect = image.get_rect(center = (origin[0] - pivot[0], origin[1]-pivot[1]))
         offset_center_to_pivot = pygame.math.Vector2(origin) - image_rect.center
         rotated_offset = offset_center_to_pivot.rotate(-angle)
         rotated_image_center = (origin[0] - rotated_offset.x, origin[1] - rotated_offset.y)
@@ -136,6 +153,8 @@ class Cone:
     
 
 class Simulation:
+
+    # Main simulation class
 
     def __init__(self, title, fps, size, flags):
         self.clock = pygame.time.Clock()
@@ -156,7 +175,7 @@ class Simulation:
         self.cones = []
         self.agents = []
 
-        for i in range(25):
+        for i in range(1):
             uAgent = Agent(self.images.drawAgent, [random.randrange(10, WIDTH -10), random.randrange(10, HEIGHT -10)])
             self.agents.append(uAgent)
 
@@ -180,14 +199,13 @@ class Simulation:
                 self.surface.blit(a.image, a.rect)
                 agentMask = pygame.mask.from_surface(a.image)
                 
-                rI, rect = c.rotate4(self.surface, c.image, a.center, (0,4), -a.angle)
+                rI, rect = c.rotate4(self.surface, c.image, a.center,(-(agentSize*2),0), -a.angle)
+                print(a.center)
                 self.surface.blit(rI, rect)
                 agentRect = a.rect
 
-                #print("main", idx, c.cIdx)
-
                 for n, xc in enumerate(self.cones):
-                    #print("sub", n, xc.cIdx, c.cIdx)
+                    # Collision Check
                 
                     if(agentRect.colliderect(xc.rect) and idx != xc.idx):
                         print("collision")
