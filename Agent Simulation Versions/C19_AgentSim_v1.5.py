@@ -142,7 +142,7 @@ class Cone:
     def rotate4(self, surf, image, origin, pivot, angle):
         # Rotate cone using 
 
-        image_rect = image.get_rect(center = (origin[0] - pivot[0], origin[1]-pivot[1]))
+        image_rect = image.get_rect(center = (origin[0] + pivot[0], origin[1] + pivot[1]))
         offset_center_to_pivot = pygame.math.Vector2(origin) - image_rect.center
         rotated_offset = offset_center_to_pivot.rotate(-angle)
         rotated_image_center = (origin[0] - rotated_offset.x, origin[1] - rotated_offset.y)
@@ -150,7 +150,6 @@ class Cone:
         rotated_image_rect = rotated_image.get_rect(center = rotated_image_center)
         self.rect = rotated_image_rect
         return rotated_image, rotated_image_rect
-    
 
 class Simulation:
 
@@ -199,7 +198,7 @@ class Simulation:
                 self.surface.blit(a.image, a.rect)
                 agentMask = pygame.mask.from_surface(a.image)
                 
-                rI, rect = c.rotate4(self.surface, c.image, a.center,(-(agentSize*2),0), -a.angle)
+                rI, rect = c.rotate4(self.surface, c.image, a.center,(agentSize + (breathWidth/2),0), -a.angle)
                 print(a.center)
                 self.surface.blit(rI, rect)
                 agentRect = a.rect
