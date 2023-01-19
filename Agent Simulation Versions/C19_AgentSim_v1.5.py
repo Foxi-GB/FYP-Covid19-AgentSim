@@ -17,17 +17,17 @@ class Image:
         self.drawAgent = self.drawAgent()
     
     def drawAgent(self):
-        surface = pygame.Surface((20, 20), pygame.SRCALPHA, 32)
+        surface = pygame.Surface((agentSize*2, agentSize*2), pygame.SRCALPHA, 32)
         surface = surface.convert_alpha()
-        pygame.draw.circle(surface, "black", (10,10), 10)
-        pygame.draw.line(surface, "green", (10, 10), (20, 10))
+        pygame.draw.circle(surface, "black", (agentSize,agentSize), agentSize)
+        pygame.draw.line(surface, "green", (agentSize, agentSize), (agentSize*2, agentSize))
         return surface
 
     def updateAgent(self):
-        surface = pygame.Surface((20, 20), pygame.SRCALPHA, 32)
+        surface = pygame.Surface((agentSize*2, agentSize*2), pygame.SRCALPHA, 32)
         surface = surface.convert_alpha()
-        pygame.draw.circle(surface, "red", (10,10), 10)
-        pygame.draw.line(surface, "green", (10, 10), (20, 10))
+        pygame.draw.circle(surface, "red", (agentSize,agentSize), agentSize)
+        pygame.draw.line(surface, "green", (agentSize, agentSize), (agentSize*2, agentSize))
         return surface
     
 
@@ -46,9 +46,14 @@ class Agent:
         self.y = self.rect.center[1]
         self.vector = pygame.Vector2()
         self.vector.from_polar((1, 0))
+
         self.turnSpeed = 40
         self.speed = 30
         self.angle = -90
+
+        self.breathedIn = False
+        self.breathWidth = breathWidth
+        self.breathLength = breathLength
 
         # Agent Infected
         self.infected = bool(np.random.choice([0,1],1,p=[0.50,0.50]))
@@ -88,7 +93,19 @@ class Agent:
             elif self.y > HEIGHT -10: 
                 self.angle -= 90
 
+    def breathFallOff(self):
+        self.breathedIn = True
+        self.breathWidth = self.breathWidth- 5
+        self.breathLength = self.breathLength- 5
+
+    def breatheOut(self):
+        self.breathedIn = False
+        self.breathWidth = 60
+        self.breathLength = 60
+
     def infectProbability(self):
+        # Agent chance of infection
+
         infects = bool(np.random.choice([0,1],1,p=[0.50,0.50]))
         return infects
 
@@ -98,8 +115,8 @@ class Cone:
 
     def __init__(self, idx):
         self.idx = idx
-        self.image = self.drawCone()
-        self.ocone = self.drawCone()
+        self.image = self.init_DrawCone()
+        self.ocone = self.init_DrawCone()
 
         self.rect = self.image.get_rect()
         self.center = pygame.Vector2(self.rect.center)
@@ -108,30 +125,36 @@ class Cone:
         self.vector.from_polar((1, 0))
 
 
-    def drawCone(self):
+    def init_DrawCone(self):
         # Draws surface and then draws cone within surface.
         # Surface size is Width x Height 
 
         surface = pygame.Surface(((breathWidth), breathLength ), pygame.SRCALPHA, 32)
-        surface.fill("orange")
         surface = surface.convert_alpha()
         pygame.draw.polygon(surface, "blue", ((0,breathWidth/2), (breathWidth,0), (breathWidth,breathLength)))
         return surface
+
+    def reDrawCone(self, agentBreathWidth, agentBreathLength):
+        surface = pygame.Surface(((agentBreathWidth), agentBreathLength ), pygame.SRCALPHA, 32)
+        surface = surface.convert_alpha()
+        pygame.draw.polygon(surface, "blue", ((0,agentBreathWidth/2), (agentBreathWidth,0), (agentBreathWidth,agentBreathLength)))
+        return surface
+
+
     
     # Previous Trials
+    
     def rotate(self, angle):
         self.angle = angle
         self.image = pygame.transform.rotate(self.ocone, -self.angle)
         self.rect = self.image.get_rect(center=self.rect.center)
-        self.vector.from_polar((1, self.angle))
-    
+        self.vector.from_polar((1, self.angle))   
     def rotate2(self, surface, angle, pivot, offset):
         rotated_image = pygame.transform.rotozoom(surface, -angle, 1)  # Rotate the image.
         rotated_offset = offset.rotate(angle)  # Rotate the offset vector.
         # Add the offset vector to the center/pivot point to shift the rect.
         rect = rotated_image.get_rect(center=pivot+rotated_offset)
         return rotated_image, rect  # Return the rotated image and shifted rect.
-    
     def rotate3(self, im, angle, pivot):
         image = pygame.transform.rotate(im, -angle)
         rect = image.get_rect()
@@ -174,7 +197,7 @@ class Simulation:
         self.cones = []
         self.agents = []
 
-        for i in range(1):
+        for i in range(5):
             uAgent = Agent(self.images.drawAgent, [random.randrange(10, WIDTH -10), random.randrange(10, HEIGHT -10)])
             self.agents.append(uAgent)
 
@@ -182,8 +205,10 @@ class Simulation:
             uCones = Cone(idx)
             self.cones.append(uCones)
 
-    def simLoop(self):
+    def simLoop(self):   
+        tick = 0 
         while True:
+            tick = tick + 1
             for event in pygame.event.get():
                 if event.type == QUIT:
                     pygame.quit()
@@ -191,23 +216,31 @@ class Simulation:
                     
             self.surface.fill('white')
 
-            for idx, (a, c) in enumerate(zip(self.agents, self.cones)):
 
+            for idx, (a, c) in enumerate(zip(self.agents, self.cones)):
+                print(tick)
                 if(a.infected == True):
                     a.oimage = self.images.updateAgent()
                 self.surface.blit(a.image, a.rect)
                 agentMask = pygame.mask.from_surface(a.image)
                 
-                rI, rect = c.rotate4(self.surface, c.image, a.center,(agentSize + (breathWidth/2),0), -a.angle)
-                print(a.center)
+                rI, rect = c.rotate4(self.surface, c.image, a.center,(agentSize + (a.breathWidth/2),0), -a.angle)
                 self.surface.blit(rI, rect)
                 agentRect = a.rect
+
+                if (tick % 10 == 0):
+                    if(a.breathedIn == True):
+                        a.breatheOut()
+                else: 
+                    a.breathFallOff()
+
+
+                c.image = c.reDrawCone(a.breathWidth, a.breathLength)
 
                 for n, xc in enumerate(self.cones):
                     # Collision Check
                 
                     if(agentRect.colliderect(xc.rect) and idx != xc.idx):
-                        print("collision")
                         coneMask = pygame.mask.from_surface(xc.image)
 
                         offsetX = xc.rect.x - a.rect.x
