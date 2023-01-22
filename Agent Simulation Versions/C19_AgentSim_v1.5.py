@@ -100,8 +100,18 @@ class Agent:
 
     def breatheOut(self):
         self.breathedIn = False
-        self.breathWidth = 60
-        self.breathLength = 60
+        self.breathWidth = 55
+        self.breathLength = 55
+
+    def agentCough(self):
+        self.breathedIn = False
+        self.breathWidth = 110
+        self.breathLength = 110
+
+    def agentSneeze(self):
+        self.breathedIn = False
+        self.breathWidth = 330  
+        self.breathLength = 330
 
     def infectProbability(self):
         # Agent chance of infection
@@ -233,6 +243,12 @@ class Simulation:
                         a.breatheOut()
                 else: 
                     a.breathFallOff()
+
+                if(bool(np.random.choice([0,1],1,p=[0.99,0.01]))):
+                    a.agentCough()
+
+                if(bool(np.random.choice([0,1],1,p=[0.999,0.001]))):
+                    a.agentSneeze()
 
 
                 c.image = c.reDrawCone(a.breathWidth, a.breathLength)
