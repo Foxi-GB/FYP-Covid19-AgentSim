@@ -2,8 +2,8 @@ import pygame, sys, random
 from pygame.locals import *
 import numpy as np
 
-WIDTH = 800
-HEIGHT = 600
+WIDTH = 222
+HEIGHT = 222
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 FPS = 60
 agentSize = 10
@@ -19,6 +19,7 @@ class Image:
     def drawAgent(self):
         surface = pygame.Surface((agentSize*2, agentSize*2), pygame.SRCALPHA, 32)
         surface = surface.convert_alpha()
+        surface.fill("orange")
         pygame.draw.circle(surface, "black", (agentSize,agentSize), agentSize)
         pygame.draw.line(surface, "green", (agentSize, agentSize), (agentSize*2, agentSize))
         return surface
@@ -26,6 +27,7 @@ class Image:
     def updateAgent(self):
         surface = pygame.Surface((agentSize*2, agentSize*2), pygame.SRCALPHA, 32)
         surface = surface.convert_alpha()
+        surface.fill("orange")
         pygame.draw.circle(surface, "red", (agentSize,agentSize), agentSize)
         pygame.draw.line(surface, "green", (agentSize, agentSize), (agentSize*2, agentSize))
         return surface
@@ -49,7 +51,7 @@ class Agent:
 
         self.turnSpeed = 40
         self.speed = 30
-        self.angle = -90
+        self.angle = 0
 
         self.breathedIn = False
         self.breathWidth = breathWidth
@@ -57,24 +59,42 @@ class Agent:
 
         # Agent Infected
         self.infected = bool(np.random.choice([0,1],1,p=[0.50,0.50]))
+    
+    def collisionCheck(self):
+        if self.x < 10 or self.x > WIDTH - 10 or self.y < 10 or self.y > HEIGHT - 10:
+            if self.x - (agentSize + 5) > 10:
+                self.angle += 180
+            elif self.x + (agentSize + 5) < WIDTH -10:
+                self.angle -= 180
+            elif self.y  + (agentSize + 5) > 10:
+                self.angle += 180
+            elif self.y  + (agentSize + 5) < HEIGHT -10:
+                self.angle -= 180
 
-    def move(self, delta):
-        rotate = 0
-        forward = 0
-
+    def rotateAgent(self,rotate):
         if(np.random.choice([0,1],1,p=[0.50,0.50]) == 0):
-            rotate -= 5
+            return rotate - 5
         else:
-            rotate += 5
-
-        if(np.random.choice([0,1],1,p=[0.90,0.10]) == 0):
-            forward += 5
-
+            return rotate + 5
+    
+    def rotateImage(self, rotate, delta):
         if rotate != 0:
             self.angle += delta * self.turnSpeed * rotate
             self.image = pygame.transform.rotate(self.oimage, -self.angle)
             self.rect = self.image.get_rect(center=self.rect.center)
             self.vector.from_polar((1, self.angle))
+         
+    def move(self, delta):
+        forward = 0
+        rotate = 0
+
+        self.collisionCheck()
+        rotate = self.rotateAgent(rotate)
+        
+        if(np.random.choice([0,1],1,p=[0.90,0.10]) == 0):
+            forward = 5
+
+        self.rotateImage(rotate, delta)
         
         if forward != 0:
             self.center += forward * self.vector * delta * self.speed
@@ -82,16 +102,6 @@ class Agent:
 
         self.x = self.rect.center[0]
         self.y = self.rect.center[1]
-
-        if self.x < 10 or self.x > WIDTH - 10 or self.y < 10 or self.y > HEIGHT - 10:
-            if self.x < 10:
-                self.angle += 90
-            elif self.x > WIDTH -10:
-                self.angle -= 90
-            elif self.y < 10:
-                self.angle += 90
-            elif self.y > HEIGHT -10: 
-                self.angle -= 90
 
     def breathFallOff(self):
         self.breathedIn = True
@@ -116,7 +126,7 @@ class Agent:
     def infectProbability(self):
         # Agent chance of infection
 
-        infects = bool(np.random.choice([0,1],1,p=[0.50,0.50]))
+        infects = bool(np.random.choice([0,1],1,p=[0.99,0.01]))
         return infects
 
 class Cone:
@@ -207,7 +217,7 @@ class Simulation:
         self.cones = []
         self.agents = []
 
-        for i in range(5):
+        for i in range(2):
             uAgent = Agent(self.images.drawAgent, [random.randrange(10, WIDTH -10), random.randrange(10, HEIGHT -10)])
             self.agents.append(uAgent)
 
