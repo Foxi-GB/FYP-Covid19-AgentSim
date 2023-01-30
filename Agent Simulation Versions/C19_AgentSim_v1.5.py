@@ -59,42 +59,29 @@ class Agent:
 
         # Agent Infected
         self.infected = bool(np.random.choice([0,1],1,p=[0.50,0.50]))
-    
-    def collisionCheck(self):
-        if self.x < 10 or self.x > WIDTH - 10 or self.y < 10 or self.y > HEIGHT - 10:
-            if self.x - (agentSize + 5) > 10:
-                self.angle += 180
-            elif self.x + (agentSize + 5) < WIDTH -10:
-                self.angle -= 180
-            elif self.y  + (agentSize + 5) > 10:
-                self.angle += 180
-            elif self.y  + (agentSize + 5) < HEIGHT -10:
-                self.angle -= 180
 
-    def rotateAgent(self,rotate):
+
+    def collisionCheck(self):
+        if (self.x + 15) > WIDTH or (self.x - 15) < 0 or (self.y + 15) > HEIGHT or (self.y - 15) < 0:
+            self.angle += 90
+            return True
+
+    def randRotate(self, rotate):
         if(np.random.choice([0,1],1,p=[0.50,0.50]) == 0):
-            return rotate - 5
+            return rotate-5
         else:
-            return rotate + 5
-    
-    def rotateImage(self, rotate, delta):
+            return rotate+5
+
+    def rotateImage(self, delta, rotate):
         if rotate != 0:
             self.angle += delta * self.turnSpeed * rotate
             self.image = pygame.transform.rotate(self.oimage, -self.angle)
             self.rect = self.image.get_rect(center=self.rect.center)
             self.vector.from_polar((1, self.angle))
-         
-    def move(self, delta):
-        forward = 0
-        rotate = 0
-
-        self.collisionCheck()
-        rotate = self.rotateAgent(rotate)
-        
+    
+    def moveForward(self, delta, forward):
         if(np.random.choice([0,1],1,p=[0.90,0.10]) == 0):
             forward = 5
-
-        self.rotateImage(rotate, delta)
         
         if forward != 0:
             self.center += forward * self.vector * delta * self.speed
@@ -102,6 +89,64 @@ class Agent:
 
         self.x = self.rect.center[0]
         self.y = self.rect.center[1]
+
+        
+    def move(self, delta):
+        forward = 0
+        rotate = 0
+
+        if self.collisionCheck() == True:
+            self.rotateImage(delta, 90)
+        else:
+            rotate += self.randRotate(rotate)
+            self.rotateImage(delta, rotate)
+            self.moveForward(delta, forward)
+    
+    # def collisionCheck(self):
+    #     if (self.x + 10) > WIDTH or (self.x - 10) < 0 or (self.y + 10) > HEIGHT or (self.y - 10) < 0:
+    #         self.angle += 180
+
+    #     # if self.x < 10 or self.x > WIDTH - 10 or self.y < 10 or self.y > HEIGHT - 10:
+    #     #     if self.x - (agentSize + 5) > 10:
+    #     #         self.angle += 180
+    #     #     elif self.x + (agentSize + 5) < WIDTH -10:
+    #     #         self.angle -= 180
+    #     #     elif self.y  + (agentSize + 5) > 10:
+    #     #         self.angle += 180
+    #     #     elif self.y  + (agentSize + 5) < HEIGHT -10:
+    #     #         self.angle -= 180
+
+    # def rotateAgent(self,rotate):
+    #     if(np.random.choice([0,1],1,p=[0.50,0.50]) == 0):
+    #         return rotate - 5
+    #     else:
+    #         return rotate + 5
+    
+    # def rotateImage(self, rotate, delta):
+    #     if rotate != 0:
+    #         self.angle += delta * self.turnSpeed * rotate
+    #         self.image = pygame.transform.rotate(self.oimage, -self.angle)
+    #         self.rect = self.image.get_rect(center=self.rect.center)
+    #         self.vector.from_polar((1, self.angle))
+         
+    # def move(self, delta):
+    #     forward = 0
+    #     rotate = 0
+
+    #     self.collisionCheck()
+    #     rotate = self.rotateAgent(rotate)
+        
+    #     if(np.random.choice([0,1],1,p=[0.90,0.10]) == 0):
+    #         forward = 5
+
+    #     self.rotateImage(rotate, delta)
+        
+    #     if forward != 0:
+    #         self.center += forward * self.vector * delta * self.speed
+    #         self.rect.center = self.center
+
+    #     self.x = self.rect.center[0]
+    #     self.y = self.rect.center[1]
 
     def breathFallOff(self):
         self.breathedIn = True
