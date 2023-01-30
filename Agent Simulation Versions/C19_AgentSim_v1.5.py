@@ -2,13 +2,18 @@ import pygame, sys, random
 from pygame.locals import *
 import numpy as np
 
-WIDTH = 222
-HEIGHT = 222
+# Room Size in Meters
+Room_WIDTH = 2.7
+Room_LENGTH = 5
+
+WIDTH = int((Room_WIDTH*100) / 2)
+HEIGHT = int((Room_LENGTH*100) / 2)
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 FPS = 60
-agentSize = 10
+agentSize = 15
 breathWidth = 50
 breathLength = 50
+numAgents = 2
 
 class Image: 
     # Draws Agent
@@ -64,9 +69,8 @@ class Agent:
     def collisionCheck(self, coneCenter):
         cX = coneCenter[0]
         cY = coneCenter[1]
-        print(cX, cY)
         if (cX) > WIDTH or (cX) < 0 or (cY) > HEIGHT or (cY) < 0:
-            self.angle += 90
+            self.angle += random.randint(45, 180)
             return True
 
     def randRotate(self, rotate):
@@ -99,7 +103,7 @@ class Agent:
         rotate = 0
 
         if self.collisionCheck(coneCenter) == True:
-            self.rotateImage(delta, 5)
+            self.rotateImage(delta, rotate)
         else:
             rotate += self.randRotate(rotate)
             self.rotateImage(delta, rotate)
@@ -188,8 +192,7 @@ class Cone:
         
         self.viewSize = 50
         self.view = self.viewCone(self.viewSize,self.viewSize)
-        self.vRect = self.view.get_rect()
-        self.vCenter = pygame.Vector2(self.vRect.center)
+        self.vCenter = pygame.Vector2(self.view.get_rect().center)
 
         self.rect = self.image.get_rect()
         self.center = pygame.Vector2(self.rect.center)
@@ -216,10 +219,8 @@ class Cone:
     def viewCone(self, viewWidth, viewLength):
         surface = pygame.Surface(((viewWidth), viewLength ), pygame.SRCALPHA, 32)
         surface = surface.convert_alpha()
-        surface.fill("red")
+        pygame.draw.line(surface, "green", (surface.get_rect().center), (viewWidth, viewLength/2))
         return surface
-
-
 
     
     # Previous Trials
@@ -276,7 +277,7 @@ class Simulation:
         self.cones = []
         self.agents = []
 
-        for i in range(1):
+        for i in range(numAgents):
             uAgent = Agent(self.images.drawAgent, [random.randrange(10, WIDTH -10), random.randrange(10, HEIGHT -10)])
             self.agents.append(uAgent)
 
@@ -309,7 +310,7 @@ class Simulation:
 
                 vRI, vRect = c.rotate4(c.view, a.center,(agentSize + (c.viewSize/2),0), -a.angle)
                 self.surface.blit(vRI, vRect)
-                c.vRect = vRect
+                c.vCenter = pygame.Vector2(vRect.center)
 
                 if (tick % 10 == 0):
                     if(a.breathedIn == True):
@@ -340,7 +341,7 @@ class Simulation:
                                 a.infected = a.infectProbability()
                             #print(n, 'The two masks overlap!', overlap)
                         
-                a.move(self.delta, c.vRect)
+                a.move(self.delta, c.vCenter)
             
             pygame.display.update() 
             pygame.time.Clock().tick(FPS)
