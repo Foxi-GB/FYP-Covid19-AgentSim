@@ -3,8 +3,8 @@ from pygame.locals import *
 import numpy as np
 
 # Room Size in Meters
-Room_WIDTH = 10
-Room_LENGTH = 10
+Room_WIDTH = 4
+Room_LENGTH = 4
 
 WIDTH = int((Room_WIDTH*100) / 2)
 HEIGHT = int((Room_LENGTH*100) / 2)
@@ -13,7 +13,7 @@ FPS = 60
 agentSize = 10
 breathWidth = 50
 breathLength = 50
-numAgents = 10
+numAgents = 2
 
 class Image: 
     # Draws Agent
@@ -158,15 +158,15 @@ class Agent:
     #     self.x = self.rect.center[0]
     #     self.y = self.rect.center[1]
 
-    def breathFallOff(self):
+    def breatheIn(self):
+        self.breathWidth = 25
+        self.breathLength = 25
         self.breathedIn = True
-        self.breathWidth = self.breathWidth- 5
-        self.breathLength = self.breathLength- 5
 
     def breatheOut(self):
-        self.breathedIn = False
         self.breathWidth = 55
         self.breathLength = 55
+        self.breathedIn = False
 
     def agentCough(self):
         self.breathedIn = False
@@ -179,7 +179,7 @@ class Agent:
         self.breathLength = 330
 
     def infectProbability(self):
-        return bool(np.random.choice([0,1],1,p=[0.01,0.99]))
+        return bool(np.random.choice([0,1],1,p=[0.99, 0.01]))
 
 class Cone:
 
@@ -299,7 +299,7 @@ class Simulation:
 
             for idx, (a, c) in enumerate(zip(self.agents, self.cones)):
 
-                print(idx, a.infectious, a.infected)
+                print(tick)
 
                 if(a.infectious == True):
                     a.oimage = self.images.updateAgent("infectious")
@@ -319,11 +319,12 @@ class Simulation:
                 self.surface.blit(vRI, vRect)
                 c.vCenter = pygame.Vector2(vRect.center)
 
-                if (tick % 10 == 0):
-                    if(a.breathedIn == True):
+                if (tick % 2 == 0):
+                    if(a.breathedIn == False):
+                        a.breatheIn()
+                    elif(a.breathedIn == True):
                         a.breatheOut()
-                else: 
-                    a.breathFallOff()
+
 
                 if(bool(np.random.choice([0,1],1,p=[0.99,0.01]))):
                     a.agentCough()
@@ -344,7 +345,7 @@ class Simulation:
 
                         overlap = agentMask.overlap_mask(coneMask, (offsetX, offsetY))
                         if overlap:
-                            if(self.agents[xc.idx].infectious == True and a.infectious == False):
+                            if(self.agents[xc.idx].infectious == True and a.infectious == False and a.breathedIn == False):
                                 a.infected = a.infectProbability()
                             #print(n, 'The two masks overlap!', overlap)
                         
