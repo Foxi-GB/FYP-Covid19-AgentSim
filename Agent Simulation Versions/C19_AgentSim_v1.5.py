@@ -10,7 +10,7 @@ WIDTH = int((Room_WIDTH*100) / 2)
 HEIGHT = int((Room_LENGTH*100) / 2)
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 FPS = 60
-agentSize = 15
+agentSize = 10
 breathWidth = 50
 breathLength = 50
 numAgents = 2
@@ -24,16 +24,19 @@ class Image:
     def drawAgent(self):
         surface = pygame.Surface((agentSize*2, agentSize*2), pygame.SRCALPHA, 32)
         surface = surface.convert_alpha()
-        surface.fill("orange")
         pygame.draw.circle(surface, "black", (agentSize,agentSize), agentSize)
         pygame.draw.line(surface, "green", (agentSize, agentSize), (agentSize*2, agentSize))
         return surface
 
-    def updateAgent(self):
+    def updateAgent(self, type):
         surface = pygame.Surface((agentSize*2, agentSize*2), pygame.SRCALPHA, 32)
         surface = surface.convert_alpha()
-        surface.fill("orange")
-        pygame.draw.circle(surface, "red", (agentSize,agentSize), agentSize)
+
+        if (type == "infected"):
+            pygame.draw.circle(surface, "orange", (agentSize,agentSize), agentSize)
+        if (type == "infectious"):
+            pygame.draw.circle(surface, "red", (agentSize,agentSize), agentSize)
+
         pygame.draw.line(surface, "green", (agentSize, agentSize), (agentSize*2, agentSize))
         return surface
     
@@ -62,9 +65,9 @@ class Agent:
         self.breathWidth = breathWidth
         self.breathLength = breathLength
 
-        # Agent Infected
-        self.infected = bool(np.random.choice([0,1],1,p=[0.50,0.50]))
-
+        # Agent Infected#
+        self.infected = False
+        self.infectious = bool(np.random.choice([0,1],1,p=[0.60,0.40]))
 
     def collisionCheck(self, coneCenter):
         cX = coneCenter[0]
@@ -176,10 +179,7 @@ class Agent:
         self.breathLength = 330
 
     def infectProbability(self):
-        # Agent chance of infection
-
-        infects = bool(np.random.choice([0,1],1,p=[0.99,0.01]))
-        return infects
+        return bool(np.random.choice([0,1],1,p=[0.01,0.99]))
 
 class Cone:
 
@@ -298,8 +298,15 @@ class Simulation:
 
 
             for idx, (a, c) in enumerate(zip(self.agents, self.cones)):
+
+                print(idx, a.infectious, a.infected)
+
+                if(a.infectious == True):
+                    a.oimage = self.images.updateAgent("infectious")
+
                 if(a.infected == True):
-                    a.oimage = self.images.updateAgent()
+                    a.oimage = self.images.updateAgent("infected")
+
                 self.surface.blit(a.image, a.rect)
                 agentMask = pygame.mask.from_surface(a.image)
                 
@@ -337,7 +344,7 @@ class Simulation:
 
                         overlap = agentMask.overlap_mask(coneMask, (offsetX, offsetY))
                         if overlap:
-                            if(self.agents[xc.idx].infected == True):
+                            if(self.agents[xc.idx].infectious == True):
                                 a.infected = a.infectProbability()
                             #print(n, 'The two masks overlap!', overlap)
                         
