@@ -3,8 +3,8 @@ from pygame.locals import *
 import numpy as np
 
 # Room Size in Meters
-Room_WIDTH = 2.7
-Room_LENGTH = 5
+Room_WIDTH = 10
+Room_LENGTH = 10
 
 WIDTH = int((Room_WIDTH*100) / 2)
 HEIGHT = int((Room_LENGTH*100) / 2)
@@ -13,7 +13,7 @@ FPS = 60
 agentSize = 10
 breathWidth = 50
 breathLength = 50
-numAgents = 2
+numAgents = 10
 
 class Image: 
     # Draws Agent
@@ -344,7 +344,7 @@ class Simulation:
 
                         overlap = agentMask.overlap_mask(coneMask, (offsetX, offsetY))
                         if overlap:
-                            if(self.agents[xc.idx].infectious == True):
+                            if(self.agents[xc.idx].infectious == True and a.infectious == False):
                                 a.infected = a.infectProbability()
                             #print(n, 'The two masks overlap!', overlap)
                         
