@@ -1,4 +1,4 @@
-import pygame, sys, random
+import pygame, sys, random, csv
 from pygame.locals import *
 import numpy as np
 
@@ -285,6 +285,24 @@ class Simulation:
             uCones = Cone(idx)
             self.cones.append(uCones)
 
+    def writeToCSV(self, binaryArray):
+        f = open('results.csv','a+', newline='')
+        writer = csv.writer(f)
+        writer.writerow(binaryArray)
+        f.close
+
+    def createBinaryArray(self, agents):
+
+        binaryArray = []
+
+        for x in agents:
+            if x.infected or x.infectious == True:
+                binaryArray.append(1)
+            else: 
+                binaryArray.append(0)
+        return binaryArray
+
+
     def simLoop(self):   
         tick = 0 
         while True:
@@ -299,7 +317,7 @@ class Simulation:
 
             for idx, (a, c) in enumerate(zip(self.agents, self.cones)):
 
-                print(tick)
+                # print(tick)
 
                 if(a.infectious == True):
                     a.oimage = self.images.updateAgent("infectious")
@@ -350,6 +368,12 @@ class Simulation:
                             #print(n, 'The two masks overlap!', overlap)
                         
                 a.move(self.delta, c.vCenter)
+
+                if tick == 500:
+                    binaryArray = self.createBinaryArray(self.agents)
+                    self.writeToCSV(binaryArray)
+                    pygame.quit()
+                    sys.exit()
             
             pygame.display.update() 
             pygame.time.Clock().tick(FPS)
