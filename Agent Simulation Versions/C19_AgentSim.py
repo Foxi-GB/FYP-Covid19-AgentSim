@@ -1,6 +1,7 @@
 import pygame, sys, random, csv
 from pygame.locals import *
 import numpy as np
+import cProfile, pstats 
 
 # Room Size in Meters
 Room_WIDTH = 4
@@ -376,10 +377,10 @@ class Simulation:
                     sys.exit()
             
             pygame.display.update() 
-            pygame.time.Clock().tick(FPS)
+
             pygame.display.flip()
             # Smooth Movement
             self.delta = self.clock.tick(self.fps) * 0.001
 
 sim = Simulation("Covid 19 Agent Simulation", 60, (WIDTH,HEIGHT), 0)
-sim.simLoop()
+cProfile.run('sim.simLoop()')
