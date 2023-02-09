@@ -370,7 +370,7 @@ class Simulation:
                         
                 a.move(self.delta, c.vCenter)
 
-                if tick == 500:
+                if tick == 86400:
                     binaryArray = self.createBinaryArray(self.agents)
                     self.writeToCSV(binaryArray)
                     pygame.quit()
@@ -379,8 +379,9 @@ class Simulation:
             pygame.display.update() 
 
             pygame.display.flip()
-            # Smooth Movement
-            self.delta = self.clock.tick(self.fps) * 0.001
+            # Value of 17 was taken from printing out self.clock.tick(60).
+            self.delta = 17 * 0.001
 
-sim = Simulation("Covid 19 Agent Simulation", 60, (WIDTH,HEIGHT), 0)
+
+sim = Simulation("Covid 19 Agent Simulation", 120, (WIDTH,HEIGHT), 0)
 cProfile.run('sim.simLoop()')
