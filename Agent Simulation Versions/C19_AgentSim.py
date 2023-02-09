@@ -281,12 +281,12 @@ class Simulation:
         for i in range(numAgents):
             uAgent = Agent(self.images.drawAgent, [random.randrange(10, WIDTH -10), random.randrange(10, HEIGHT -10)])
             self.agents.append(uAgent)
-        
-        self.agents = self.infectiousTestGen(self.agents)
 
         for idx, i in enumerate(self.agents):
             uCones = Cone(idx)
             self.cones.append(uCones)
+
+        self.agents = self.infectiousTestGen(self.agents)
         
 
     def writeToCSV(self, binaryArray):
@@ -295,14 +295,15 @@ class Simulation:
         writer.writerow(binaryArray)
         f.close
 
-    def createBinaryArray(self, agents):
+    def createBinaryArray(self):
 
         binaryArray = []
 
-        for x in agents:
-            if x.infected or x.infectious == True:
+        for idx, x in enumerate(self.agents):
+            print(x.infected, x.infectious)
+            if (x.infected == True or x.infectious == True):
                 binaryArray.append(1)
-            else: 
+            elif (x.infected == False or x.infectious == False):
                 binaryArray.append(0)
         return binaryArray
     
@@ -316,7 +317,8 @@ class Simulation:
         return agents
 
     def simLoop(self):   
-        tick = 0 
+        tick = 0
+
         while True:
             tick = tick + 1
             for event in pygame.event.get():
@@ -379,11 +381,14 @@ class Simulation:
                         
                 a.move(self.delta, c.vCenter)
 
-                if tick == 86400:
-                    binaryArray = self.createBinaryArray(self.agents)
+                if tick == 1000:
+                    binaryArray = self.createBinaryArray()
                     self.writeToCSV(binaryArray)
                     pygame.quit()
                     sys.exit()
+
+                self.agents = self.agents
+
             
             pygame.display.update() 
 
@@ -393,4 +398,5 @@ class Simulation:
 
 
 sim = Simulation("Covid 19 Agent Simulation", 120, (WIDTH,HEIGHT), 0)
-cProfile.run('sim.simLoop()')
+sim.simLoop()
+#cProfile.run('sim.simLoop()')
