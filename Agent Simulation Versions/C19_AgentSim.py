@@ -68,7 +68,7 @@ class Agent:
 
         # Agent Infected#
         self.infected = False
-        self.infectious = bool(np.random.choice([0,1],1,p=[0.60,0.40]))
+        self.infectious = bool(np.random.choice([0,1],1,p=[0.60,0.40])) 
 
     def collisionCheck(self, coneCenter):
         cX = coneCenter[0]
@@ -281,10 +281,13 @@ class Simulation:
         for i in range(numAgents):
             uAgent = Agent(self.images.drawAgent, [random.randrange(10, WIDTH -10), random.randrange(10, HEIGHT -10)])
             self.agents.append(uAgent)
+        
+        self.agents = self.infectiousTestGen(self.agents)
 
         for idx, i in enumerate(self.agents):
             uCones = Cone(idx)
             self.cones.append(uCones)
+        
 
     def writeToCSV(self, binaryArray):
         f = open('results.csv','a+', newline='')
@@ -302,7 +305,15 @@ class Simulation:
             else: 
                 binaryArray.append(0)
         return binaryArray
-
+    
+    def infectiousTestGen(self, agents):
+        for idx, x in enumerate (agents):
+            print(idx)
+            if(idx == 0):
+                x.infectious = True
+            if(idx == 1): 
+                x.infectious = False
+        return agents
 
     def simLoop(self):   
         tick = 0 
@@ -317,8 +328,6 @@ class Simulation:
 
 
             for idx, (a, c) in enumerate(zip(self.agents, self.cones)):
-
-                # print(tick)
 
                 if(a.infectious == True):
                     a.oimage = self.images.updateAgent("infectious")
