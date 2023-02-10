@@ -300,7 +300,7 @@ class Simulation:
         binaryArray = []
 
         for idx, x in enumerate(self.agents):
-            print(x.infected, x.infectious)
+            print(idx, x.infected, x.infectious)
             if (x.infected == True or x.infectious == True):
                 binaryArray.append(1)
             elif (x.infected == False or x.infectious == False):
@@ -376,9 +376,14 @@ class Simulation:
                         overlap = agentMask.overlap_mask(coneMask, (offsetX, offsetY))
                         if overlap:
                             if(self.agents[xc.idx].infectious == True and a.infectious == False and a.breathedIn == False):
-                                a.infected = a.infectProbability()
+                                if(a.infected == False):
+                                    a.infected = a.infectProbability()
+                            # a is being set to false so once its set to TRUE
+                            # we need to make sure once its set true it cannot be changed.
                             #print(n, 'The two masks overlap!', overlap)
                         
+                print(a.infected) 
+
                 a.move(self.delta, c.vCenter)
 
                 if tick == 1000:
@@ -386,8 +391,6 @@ class Simulation:
                     self.writeToCSV(binaryArray)
                     pygame.quit()
                     sys.exit()
-
-                self.agents = self.agents
 
             
             pygame.display.update() 
