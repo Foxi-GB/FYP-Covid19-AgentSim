@@ -4,7 +4,7 @@ import numpy as np
 import cProfile, pstats 
 
 # Room Size in Meters
-Room_WIDTH = 4
+Room_WIDTH = 25
 Room_LENGTH = 4
 
 WIDTH = int((Room_WIDTH*100) / 2)
@@ -14,7 +14,8 @@ FPS = 60
 agentSize = 10
 breathWidth = 50
 breathLength = 50
-numAgents = 2
+numAgents = 20
+blockSize = 20
 
 class Image: 
     # Draws Agent
@@ -180,7 +181,7 @@ class Agent:
         self.breathLength = 330
 
     def infectProbability(self):
-        return bool(np.random.choice([0,1],1,p=[0.99, 0.01]))
+        return bool(np.random.choice([0,1],1,p=[0.99995, 0.00005]))
 
 class Cone:
 
@@ -255,6 +256,37 @@ class Cone:
         rotated_image_rect = rotated_image.get_rect(center = rotated_image_center)
         return rotated_image, rotated_image_rect
 
+class DiffusionGrid:
+    def __init__(self):
+        self.surface = pygame.display.set_mode((WIDTH, HEIGHT), 0)
+        self.gridArray = DiffusionGrid.createGrid()
+        self.gridSurface = DiffusionGrid.drawGrid(self.gridArray, self.surface)
+
+    def createGrid():
+        gridArray = []
+        for x in range(0, WIDTH, blockSize):
+            for y in range(0, HEIGHT, blockSize):
+                gridArray.append(DiffusionBlock(blockSize, 0, x, y))
+        return gridArray
+    
+    def drawGrid(gridArray, surface):
+        for idx, i in enumerate(gridArray):
+            rect = pygame.Rect(i.positionX, i.positionY, i.blockX, i.blockY)
+            pygame.draw.rect(surface, i.colour, rect)
+        return surface
+
+class DiffusionBlock:
+    def __init__(self, blockSize, pLevel, posX, posY):
+        self.blockX = blockSize
+        self.blockY = blockSize
+        self.particleLevel = pLevel
+        self.positionX = posX
+        self.positionY = posY
+        self.colour = (100,0,0)
+
+
+
+
 class Simulation:
 
     # Main simulation class
@@ -287,7 +319,6 @@ class Simulation:
             self.cones.append(uCones)
 
         self.agents = self.infectiousTestGen(self.agents)
-        
 
     def writeToCSV(self, binaryArray):
         f = open('results.csv','a+', newline='')
@@ -296,11 +327,8 @@ class Simulation:
         f.close
 
     def createBinaryArray(self):
-
         binaryArray = []
-
         for idx, x in enumerate(self.agents):
-            print(idx, x.infected, x.infectious)
             if (x.infected == True or x.infectious == True):
                 binaryArray.append(1)
             elif (x.infected == False or x.infectious == False):
@@ -309,10 +337,9 @@ class Simulation:
     
     def infectiousTestGen(self, agents):
         for idx, x in enumerate (agents):
-            print(idx)
-            if(idx == 0):
+            if(idx == 0 or idx == 1):
                 x.infectious = True
-            if(idx == 1): 
+            else:
                 x.infectious = False
         return agents
 
@@ -327,7 +354,9 @@ class Simulation:
                     sys.exit()
                     
             self.surface.fill('white')
-
+            
+            grid = DiffusionGrid()
+            self.surface.blit(grid.gridSurface, (0,0) )
 
             for idx, (a, c) in enumerate(zip(self.agents, self.cones)):
 
@@ -382,15 +411,18 @@ class Simulation:
                             # we need to make sure once its set true it cannot be changed.
                             #print(n, 'The two masks overlap!', overlap)
                         
-                print(a.infected) 
 
                 a.move(self.delta, c.vCenter)
 
-                if tick == 1000:
-                    binaryArray = self.createBinaryArray()
-                    self.writeToCSV(binaryArray)
-                    pygame.quit()
-                    sys.exit()
+            if (tick % 60) == 0:
+                binaryArray = self.createBinaryArray()
+                self.writeToCSV(binaryArray)
+
+            if tick == 3600:
+                binaryArray = self.createBinaryArray()
+                self.writeToCSV(binaryArray)
+                pygame.quit()
+                sys.exit()
 
             
             pygame.display.update() 
