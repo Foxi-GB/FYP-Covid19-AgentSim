@@ -4,8 +4,8 @@ import numpy as np
 import cProfile, pstats 
 
 # Room Size in Meters
-Room_WIDTH = 25
-Room_LENGTH = 4
+Room_WIDTH = 10
+Room_LENGTH = 10
 
 WIDTH = int((Room_WIDTH*100) / 2)
 HEIGHT = int((Room_LENGTH*100) / 2)
@@ -41,7 +41,11 @@ class Image:
 
         pygame.draw.line(surface, "green", (agentSize, agentSize), (agentSize*2, agentSize))
         return surface
-    
+
+    def drawSquare(blockSize):
+        surface = pygame.Surface((blockSize, blockSize), 0)
+        surface.fill((150,0,0))
+        return surface
 
 class Agent:
 
@@ -259,33 +263,32 @@ class Cone:
 class DiffusionGrid:
     def __init__(self):
         self.surface = pygame.display.set_mode((WIDTH, HEIGHT), 0)
-        self.gridArray = DiffusionGrid.createGrid()
-        self.gridSurface = DiffusionGrid.drawGrid(self.gridArray, self.surface)
+        # self.gridArray = DiffusionGrid.createGrid()
+        # self.gridSurface = DiffusionGrid.drawGrid(self.gridArray, self.surface)
 
-    def createGrid():
+    def createGrid(self):
         gridArray = []
         for x in range(0, WIDTH, blockSize):
             for y in range(0, HEIGHT, blockSize):
-                gridArray.append(DiffusionBlock(blockSize, 0, x, y))
+                gridArray.append(GridSquare(Image.drawSquare(blockSize), blockSize, 0, x, y))
         return gridArray
-    
-    def drawGrid(gridArray, surface):
-        for idx, i in enumerate(gridArray):
-            rect = pygame.Rect(i.positionX, i.positionY, i.blockX, i.blockY)
-            pygame.draw.rect(surface, i.colour, rect)
+
+    def drawGridSurface(self, gridArray):
+        surface = pygame.Surface((WIDTH, HEIGHT), 0)
+        for i in gridArray:
+            surface.blit(i.image, (i.simPosX, i.simPosY))
         return surface
 
-class DiffusionBlock:
-    def __init__(self, blockSize, pLevel, posX, posY):
-        self.blockX = blockSize
-        self.blockY = blockSize
+class GridSquare:
+    def __init__(self, image, blockSize, pLevel, posX, posY):
+        self.image = image
+        self.rect = image.get_rect()
+        self.sizeX = blockSize
+        self.sizeY = blockSize
+        self.simPosX = posX
+        self.simPosY = posY
         self.particleLevel = pLevel
-        self.positionX = posX
-        self.positionY = posY
         self.colour = (100,0,0)
-
-
-
 
 class Simulation:
 
@@ -317,6 +320,11 @@ class Simulation:
         for idx, i in enumerate(self.agents):
             uCones = Cone(idx)
             self.cones.append(uCones)
+
+        grid = DiffusionGrid()
+        self.gridArray = grid.createGrid()
+        self.gridSurface = grid.drawGridSurface(self.gridArray)
+
 
         self.agents = self.infectiousTestGen(self.agents)
 
@@ -354,9 +362,7 @@ class Simulation:
                     sys.exit()
                     
             self.surface.fill('white')
-            
-            grid = DiffusionGrid()
-            self.surface.blit(grid.gridSurface, (0,0) )
+            self.surface.blit(self.gridSurface, (0,0))
 
             for idx, (a, c) in enumerate(zip(self.agents, self.cones)):
 
