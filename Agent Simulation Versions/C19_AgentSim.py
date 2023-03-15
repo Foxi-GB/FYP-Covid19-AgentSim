@@ -15,7 +15,7 @@ agentSize = 10
 breathWidth = 50
 breathLength = 50
 numAgents = 20
-blockSize = 20
+blockSize = 10
 
 class Image: 
     # Draws Agent
@@ -42,9 +42,9 @@ class Image:
         pygame.draw.line(surface, "green", (agentSize, agentSize), (agentSize*2, agentSize))
         return surface
 
-    def drawSquare(blockSize):
+    def drawSquare(blockSize,colour):
         surface = pygame.Surface((blockSize, blockSize), 0)
-        surface.fill((150,0,0))
+        surface.fill(colour)
         return surface
 
 class Agent:
@@ -261,39 +261,41 @@ class Cone:
         return rotated_image, rotated_image_rect
 
 class DiffusionGrid:
-    def __init__(self):
-        self.surface = pygame.display.set_mode((WIDTH, HEIGHT), 0)
-        # self.gridArray = DiffusionGrid.createGrid()
-        # self.gridSurface = DiffusionGrid.drawGrid(self.gridArray, self.surface)
-
-    def createGrid(self):
-        gridArray = []
+    def createGrid():
+        grid = []
         for x in range(0, WIDTH, blockSize):
             for y in range(0, HEIGHT, blockSize):
-                gridArray.append(GridSquare(Image.drawSquare(blockSize), blockSize, 0, x, y))
-        return gridArray
-
-    def drawGridSurface(self, gridArray):
-        surface = pygame.Surface((WIDTH, HEIGHT), 0)
-        for i in gridArray:
-            surface.blit(i.image, (i.simPosX, i.simPosY))
-        return surface
+                square = GridSquare(x, y)
+                grid.append(square)
+        return grid
 
 class GridSquare:
-    def __init__(self, image, blockSize, pLevel, posX, posY):
-        self.image = image
-        self.rect = image.get_rect()
-        self.sizeX = blockSize
-        self.sizeY = blockSize
-        self.simPosX = posX
-        self.simPosY = posY
-        self.particleLevel = pLevel
-        self.colour = (100,0,0)
+    def __init__(self, x, y):
+        self.pL = 0
+        self.posX = x
+        self.posY = y
+    
+    def setPL(self, level):
+        self.pL = level
+    
+    def getPL(self):
+        return self.pL
+    
+    def setPosX(self, x):
+        self.posX = x
+    
+    def getPosX(self):
+        return self.posX
+    
+    def setPosY(self, y):
+        self.posY = y
+    
+    def getPosY(self):
+        return self.posY
 
-class Simulation:
 
     # Main simulation class
-
+class Simulation:
     def __init__(self, title, fps, size, flags):
         self.clock = pygame.time.Clock()
 
@@ -312,6 +314,11 @@ class Simulation:
         
         self.cones = []
         self.agents = []
+        self.grid = DiffusionGrid.createGrid()
+        self.gridRect = []
+        for idx,sqr in enumerate(self.grid):
+            rect = Rect(sqr.getPosX(), sqr.getPosY(), sqr.getPosX() + blockSize, sqr.getPosY() + blockSize)
+            self.gridRect.append(rect)
 
         for i in range(numAgents):
             uAgent = Agent(self.images.drawAgent, [random.randrange(10, WIDTH -10), random.randrange(10, HEIGHT -10)])
@@ -320,11 +327,6 @@ class Simulation:
         for idx, i in enumerate(self.agents):
             uCones = Cone(idx)
             self.cones.append(uCones)
-
-        grid = DiffusionGrid()
-        self.gridArray = grid.createGrid()
-        self.gridSurface = grid.drawGridSurface(self.gridArray)
-
 
         self.agents = self.infectiousTestGen(self.agents)
 
@@ -362,8 +364,14 @@ class Simulation:
                     sys.exit()
                     
             self.surface.fill('white')
-            self.surface.blit(self.gridSurface, (0,0))
 
+            for idx, sqr in enumerate(self.grid):
+                color = (255,255,255)
+                if(sqr.getPL() > 0 ):
+                    color = (255,150,0)
+                gridImages = []
+                gridImages.append(pygame.draw.rect(self.surface, color, (sqr.getPosX(), sqr.getPosY(), sqr.getPosX() + blockSize, sqr.getPosY() + blockSize)))
+            
             for idx, (a, c) in enumerate(zip(self.agents, self.cones)):
 
                 if(a.infectious == True):
@@ -391,24 +399,38 @@ class Simulation:
                         a.breatheOut()
 
 
-                if(bool(np.random.choice([0,1],1,p=[0.99,0.01]))):
-                    a.agentCough()
+                # if(bool(np.random.choice([0,1],1,p=[0.99,0.01]))):
+                #     a.agentCough()
 
-                if(bool(np.random.choice([0,1],1,p=[0.999,0.001]))):
-                    a.agentSneeze()
+                # if(bool(np.random.choice([0,1],1,p=[0.999,0.001]))):
+                #     a.agentSneeze()
 
                 c.image = c.reDrawCone(a.breathWidth, a.breathLength)
+                coneRect = c.rect
 
+                if(a.infectious == True):
+                    for idx, gridSqr in enumerate(self.gridRect):
+                        if(coneRect.colliderect(gridSqr)):
+                            coneMask = pygame.mask.from_surface(c.image)
+                            sqrMask = pygame.mask.Mask((blockSize, blockSize))
+                            sqrMask.fill()
+
+                            offset = (gridSqr.x - c.rect.x, gridSqr.y - c.rect.y)
+
+                            overlap = coneMask.overlap(sqrMask, offset)
+                            if overlap:
+                                self.grid[idx].setPL(1)
+                        
+                # Loop through the cones and check to see if any of them are colliding with agents.
                 for n, xc in enumerate(self.cones):
-                    # Collision Check
-                
+                    # If agent collides with cone.
                     if(agentRect.colliderect(xc.rect) and idx != xc.idx):
                         coneMask = pygame.mask.from_surface(xc.image)
 
                         offsetX = xc.rect.x - a.rect.x
                         offsetY = xc.rect.y - a.rect.y
 
-                        overlap = agentMask.overlap_mask(coneMask, (offsetX, offsetY))
+                        overlap = agentMask.overlap(coneMask, (offsetX, offsetY))
                         if overlap:
                             if(self.agents[xc.idx].infectious == True and a.infectious == False and a.breathedIn == False):
                                 if(a.infected == False):
@@ -420,11 +442,12 @@ class Simulation:
 
                 a.move(self.delta, c.vCenter)
 
+
             if (tick % 60) == 0:
                 binaryArray = self.createBinaryArray()
                 self.writeToCSV(binaryArray)
 
-            if tick == 3600:
+            if tick == 5000:
                 binaryArray = self.createBinaryArray()
                 self.writeToCSV(binaryArray)
                 pygame.quit()
