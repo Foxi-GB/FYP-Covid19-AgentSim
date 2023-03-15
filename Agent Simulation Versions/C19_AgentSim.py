@@ -352,6 +352,17 @@ class Simulation:
             else:
                 x.infectious = False
         return agents
+    
+    def calcColour(self, pL):
+        if pL == 1:
+            return (255,255,0)
+        elif(pL == 2):
+            return (255,150,0)
+        elif(pL == 3):
+            return (255,100,0)
+        else:
+            return (220,0,0)
+
 
     def simLoop(self):   
         tick = 0
@@ -368,7 +379,7 @@ class Simulation:
             for idx, sqr in enumerate(self.grid):
                 color = (255,255,255)
                 if(sqr.getPL() > 0 ):
-                    color = (255,150,0)
+                    color = self.calcColour(sqr.getPL())
                 gridImages = []
                 gridImages.append(pygame.draw.rect(self.surface, color, (sqr.getPosX(), sqr.getPosY(), sqr.getPosX() + blockSize, sqr.getPosY() + blockSize)))
             
@@ -419,7 +430,9 @@ class Simulation:
 
                             overlap = coneMask.overlap(sqrMask, offset)
                             if overlap:
-                                self.grid[idx].setPL(1)
+                                # Addition of pLevel should be based on distance to mouth, and then colour of square is dictated by total level.
+                                pLevel = (self.grid[idx].getPL()) + 1
+                                self.grid[idx].setPL(pLevel)
                         
                 # Loop through the cones and check to see if any of them are colliding with agents.
                 for n, xc in enumerate(self.cones):
