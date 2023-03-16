@@ -413,7 +413,7 @@ class Simulation:
                 self.surface.blit(vRI, vRect)
                 c.vCenter = pygame.Vector2(vRect.center)
 
-                if (tick % 2 == 0):
+                if (tick % 3 == 0):
                     if(a.breathedIn == False):
                         a.breatheIn()
                     elif(a.breathedIn == True):
@@ -429,7 +429,7 @@ class Simulation:
                 c.image = c.reDrawCone(a.breathWidth, a.breathLength)
                 coneRect = c.rect
 
-                if(a.infectious == True):
+                if(a.infectious == True and a.breathedIn == True):
                     for idx, gridSqr in enumerate(self.gridRect):
                         if(coneRect.colliderect(gridSqr)):
                             coneMask = pygame.mask.from_surface(c.image)
@@ -474,9 +474,6 @@ class Simulation:
                             # we need to make sure once its set true it cannot be changed.
                             #print(n, 'The two masks overlap!', overlap)
                 
-
-                        
-
                 a.move(self.delta, c.vCenter)
 
 
