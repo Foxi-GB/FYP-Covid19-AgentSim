@@ -15,7 +15,7 @@ agentSize = 10
 breathWidth = 50
 breathLength = 50
 numAgents = 20
-blockSize = 10
+blockSize = 20
 
 class Image: 
     # Draws Agent
@@ -37,7 +37,7 @@ class Image:
         if (type == "infected"):
             pygame.draw.circle(surface, "orange", (agentSize,agentSize), agentSize)
         if (type == "infectious"):
-            pygame.draw.circle(surface, "red", (agentSize,agentSize), agentSize)
+            pygame.draw.circle(surface, "cyan", (agentSize,agentSize), agentSize)
 
         pygame.draw.line(surface, "green", (agentSize, agentSize), (agentSize*2, agentSize))
         return surface
@@ -185,7 +185,17 @@ class Agent:
         self.breathLength = 330
 
     def infectProbability(self):
-        return bool(np.random.choice([0,1],1,p=[0.99995, 0.00005]))
+        rand = bool(np.random.choice([0,1],1,p=[0.99995, 0.00005]))
+        if(rand == 1):
+            print("Agent Infection")
+        return rand
+    
+    def infectRoomProbability(self):
+        rand = bool(np.random.choice([0,1],1,p=[0.99995, 0.00005]))
+        if(rand == 1):
+            print("Room Infection")
+        return rand
+        
 
 class Cone:
 
@@ -433,6 +443,18 @@ class Simulation:
                                 # Addition of pLevel should be based on distance to mouth, and then colour of square is dictated by total level.
                                 pLevel = (self.grid[idx].getPL()) + 1
                                 self.grid[idx].setPL(pLevel)
+                elif(a.infectious == False):
+                    for idx, gridSqr in enumerate(self.gridRect):
+                        if(coneRect.colliderect(gridSqr)):
+                            sqrMask = pygame.mask.Mask((blockSize, blockSize))
+                            sqrMask.fill()
+
+                            offset = (gridSqr.x - a.rect.x, gridSqr.y - a.rect.y)
+
+                            overlap = agentMask.overlap(sqrMask, offset)
+                            if (overlap and a.breathedIn == False) :
+                                # Addition of pLevel should be based on distance to mouth, and then colour of square is dictated by total level.
+                                a.infected = a.infectRoomProbability()
                         
                 # Loop through the cones and check to see if any of them are colliding with agents.
                 for n, xc in enumerate(self.cones):
@@ -451,6 +473,8 @@ class Simulation:
                             # a is being set to false so once its set to TRUE
                             # we need to make sure once its set true it cannot be changed.
                             #print(n, 'The two masks overlap!', overlap)
+                
+
                         
 
                 a.move(self.delta, c.vCenter)
