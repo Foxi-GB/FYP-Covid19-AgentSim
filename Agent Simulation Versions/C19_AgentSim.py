@@ -241,22 +241,22 @@ class Cone:
     
     # Previous Trials
     
-    def rotate(self, angle):
-        self.angle = angle
-        self.image = pygame.transform.rotate(self.ocone, -self.angle)
-        self.rect = self.image.get_rect(center=self.rect.center)
-        self.vector.from_polar((1, self.angle))   
-    def rotate2(self, surface, angle, pivot, offset):
-        rotated_image = pygame.transform.rotozoom(surface, -angle, 1)  # Rotate the image.
-        rotated_offset = offset.rotate(angle)  # Rotate the offset vector.
-        # Add the offset vector to the center/pivot point to shift the rect.
-        rect = rotated_image.get_rect(center=pivot+rotated_offset)
-        return rotated_image, rect  # Return the rotated image and shifted rect.
-    def rotate3(self, im, angle, pivot):
-        image = pygame.transform.rotate(im, -angle)
-        rect = image.get_rect()
-        rect.center = pivot
-        return image, rect
+    # def rotate(self, angle):
+    #     self.angle = angle
+    #     self.image = pygame.transform.rotate(self.ocone, -self.angle)
+    #     self.rect = self.image.get_rect(center=self.rect.center)
+    #     self.vector.from_polar((1, self.angle))   
+    # def rotate2(self, surface, angle, pivot, offset):
+    #     rotated_image = pygame.transform.rotozoom(surface, -angle, 1)  # Rotate the image.
+    #     rotated_offset = offset.rotate(angle)  # Rotate the offset vector.
+    #     # Add the offset vector to the center/pivot point to shift the rect.
+    #     rect = rotated_image.get_rect(center=pivot+rotated_offset)
+    #     return rotated_image, rect  # Return the rotated image and shifted rect.
+    # def rotate3(self, im, angle, pivot):
+    #     image = pygame.transform.rotate(im, -angle)
+    #     rect = image.get_rect()
+    #     rect.center = pivot
+    #     return image, rect
 
     # Working Rotation Code
     def rotate4(self, image, origin, pivot, angle):
@@ -282,6 +282,7 @@ class DiffusionGrid:
 class GridSquare:
     def __init__(self, x, y):
         self.pL = 0
+        self.opac = 0
         self.posX = x
         self.posY = y
     
@@ -363,12 +364,22 @@ class Simulation:
                 x.infectious = False
         return agents
     
+    def calcParticleLevel(self, dist):
+        if dist >= 0 and dist <= 100:
+            return 1
+        if dist >100 and dist <= 200:
+            return 0.5
+        else:
+            return 0.25
+
     def calcColour(self, pL):
-        if pL == 1:
+        if (pL == 0):
+            return (255,255,255)
+        elif (pL > 0 and pL <= 1):
             return (255,255,0)
-        elif(pL == 2):
+        elif(pL > 1 and pL <= 2):
             return (255,150,0)
-        elif(pL == 3):
+        elif(pL > 2 and pL <= 3):
             return (255,100,0)
         else:
             return (220,0,0)
@@ -441,6 +452,8 @@ class Simulation:
                             overlap = coneMask.overlap(sqrMask, offset)
                             if overlap:
                                 # Addition of pLevel should be based on distance to mouth, and then colour of square is dictated by total level.
+                                agentDist = a.center.distance_to(gridSqr.center)
+                                pLevel = (self.grid[idx].getPL()) + self.calcParticleLevel(agentDist)
                                 pLevel = (self.grid[idx].getPL()) + 1
                                 self.grid[idx].setPL(pLevel)
                 elif(a.infectious == False):
