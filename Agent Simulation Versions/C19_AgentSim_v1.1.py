@@ -66,11 +66,11 @@ class Agent:
                 print("self")
             else: 
                 print(idx, math.sqrt((self.x - obj.x)**2 + (self.y - obj.y)**2)) # Calculates distance between self and other agents.
-                #pygame.draw.line(screen, (32,32,0), (self.x, self.y), (obj.x, obj.y))
+                pygame.draw.line(screen, (32,32,0), (self.x, self.y), (obj.x, obj.y))
         
 
 agents = []
-for i in range(100):
+for i in range(10):
     Agents = Agent()
     agents.append(Agents)
 
@@ -89,7 +89,6 @@ def gameLoop():
             i.wander()  # agent random walk
             i.draw()    # draw agent with update position
             i.calcDistance()
-            print("##################")
 
         pygame.display.update() 
         pygame.time.Clock().tick(FPS)

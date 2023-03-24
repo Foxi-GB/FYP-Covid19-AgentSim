@@ -85,6 +85,7 @@ class Agent:
     def calcDistance2(self):
         for idx, obj in enumerate(agents):
             distance = math.sqrt((self.x - obj.x)**2 + (self.y - obj.y)**2) #math.dist(obj.pos , self.pos)
+            #distance = math.dist(obj.pos , self.pos)
             if(distance <= float(25) and distance != 0.0):
                 if(obj.infected == bool(True)):
                     self.infected = True

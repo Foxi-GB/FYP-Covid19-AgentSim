@@ -12,8 +12,8 @@ from csv import writer
 
 ##### Variables #####
 
-WIDTH = 1000
-HEIGHT = 700
+WIDTH = 200
+HEIGHT = 200
 FPS = 5
 pxlSize = 10
 screen = pygame.display.set_mode((WIDTH,HEIGHT))
@@ -41,17 +41,14 @@ class Agent:
         # Rotation point for polygon X
         vecX = pygame.math.Vector2(0, 0).rotate(self.rotation)
         ptX_x, ptX_y = self.x + vecX.x, self.y + vecX.y
-
         # Rotation point for polygon Y
         vecY = pygame.math.Vector2(0, 25).rotate(self.rotation - 10)
         ptY_x, ptY_y = ptX_x + vecY.x, ptX_y + vecY.y
-
         # Rotation point for polygon Y
         vecZ = pygame.math.Vector2(0, 25).rotate(self.rotation + 10)
         ptZ_x, ptZ_y = ptX_x + vecZ.x, ptX_y + vecZ.y
-
-
-        pygame.draw.polygon(screen, (255,0,0), ((ptX_x, ptX_y), (ptY_x, ptY_y), (ptZ_x, ptZ_y))) # Draw Cone
+        # Draw Cone
+        pygame.draw.polygon(screen, (255,0,0), ((ptX_x, ptX_y), (ptY_x, ptY_y), (ptZ_x, ptZ_y)))
 
         # # Second Attempt - Draw Line from Centre of Circle
         # angle_rad = math.radians(self.rotation)

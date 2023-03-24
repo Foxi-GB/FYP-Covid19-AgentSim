@@ -57,8 +57,6 @@ class Agent:
 
         if(np.random.choice([0,1],1,p=[0.90,0.10]) == 0):
             forward += 5
-        else:
-            forward -= 5
 
         if rotate != 0:
             self.angle += delta * self.turnSpeed * rotate

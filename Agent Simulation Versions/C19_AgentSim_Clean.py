@@ -17,9 +17,7 @@ breathLength = 50
 numAgents = 20
 blockSize = 20
 
-class Image: 
-    # Draws Agent
-
+class Image:
     def __init__(self):
         self.drawAgent = self.drawAgent()
     
@@ -48,12 +46,7 @@ class Image:
         return surface
 
 class Agent:
-
-    # Contains information about Agent
-
     def __init__(self, image, position):
-
-        # Agent Coordinates
         self.oimage = image
         self.image = image
         self.rect = image.get_rect(center=position)
@@ -71,7 +64,6 @@ class Agent:
         self.breathWidth = breathWidth
         self.breathLength = breathLength
 
-        # Agent Infected#
         self.infected = False
         self.infectious = bool(np.random.choice([0,1],1,p=[0.60,0.40])) 
 
@@ -117,52 +109,6 @@ class Agent:
             rotate += self.randRotate(rotate)
             self.rotateImage(delta, rotate)
             self.moveForward(delta, forward)
-    
-    # def collisionCheck(self):
-    #     if (self.x + 10) > WIDTH or (self.x - 10) < 0 or (self.y + 10) > HEIGHT or (self.y - 10) < 0:
-    #         self.angle += 180
-
-    #     # if self.x < 10 or self.x > WIDTH - 10 or self.y < 10 or self.y > HEIGHT - 10:
-    #     #     if self.x - (agentSize + 5) > 10:
-    #     #         self.angle += 180
-    #     #     elif self.x + (agentSize + 5) < WIDTH -10:
-    #     #         self.angle -= 180
-    #     #     elif self.y  + (agentSize + 5) > 10:
-    #     #         self.angle += 180
-    #     #     elif self.y  + (agentSize + 5) < HEIGHT -10:
-    #     #         self.angle -= 180
-
-    # def rotateAgent(self,rotate):
-    #     if(np.random.choice([0,1],1,p=[0.50,0.50]) == 0):
-    #         return rotate - 5
-    #     else:
-    #         return rotate + 5
-    
-    # def rotateImage(self, rotate, delta):
-    #     if rotate != 0:
-    #         self.angle += delta * self.turnSpeed * rotate
-    #         self.image = pygame.transform.rotate(self.oimage, -self.angle)
-    #         self.rect = self.image.get_rect(center=self.rect.center)
-    #         self.vector.from_polar((1, self.angle))
-         
-    # def move(self, delta):
-    #     forward = 0
-    #     rotate = 0
-
-    #     self.collisionCheck()
-    #     rotate = self.rotateAgent(rotate)
-        
-    #     if(np.random.choice([0,1],1,p=[0.90,0.10]) == 0):
-    #         forward = 5
-
-    #     self.rotateImage(rotate, delta)
-        
-    #     if forward != 0:
-    #         self.center += forward * self.vector * delta * self.speed
-    #         self.rect.center = self.center
-
-    #     self.x = self.rect.center[0]
-    #     self.y = self.rect.center[1]
 
     def breatheIn(self):
         self.breathWidth = 25
@@ -198,9 +144,6 @@ class Agent:
         
 
 class Cone:
-
-    # Contains cone information, draws cone and rotates cone with agent
-
     def __init__(self, idx):
         self.idx = idx
         self.image = self.init_DrawCone()
@@ -212,15 +155,12 @@ class Cone:
 
         self.rect = self.image.get_rect()
         self.center = pygame.Vector2(self.rect.center)
-        self.angle = 25
+        self.angle = 90
         self.vector = pygame.Vector2()
         self.vector.from_polar((1, 0))
 
 
     def init_DrawCone(self):
-        # Draws surface and then draws cone within surface.
-        # Surface size is Width x Height 
-
         surface = pygame.Surface(((breathWidth), breathLength ), pygame.SRCALPHA, 32)
         surface = surface.convert_alpha()
         pygame.draw.polygon(surface, "blue", ((0,breathWidth/2), (breathWidth,0), (breathWidth,breathLength)))
@@ -238,30 +178,10 @@ class Cone:
         pygame.draw.line(surface, "green", (surface.get_rect().center), (viewWidth, viewLength/2))
         return surface
 
-    
-    # Previous Trials
-    
-    # def rotate(self, angle):
-    #     self.angle = angle
-    #     self.image = pygame.transform.rotate(self.ocone, -self.angle)
-    #     self.rect = self.image.get_rect(center=self.rect.center)
-    #     self.vector.from_polar((1, self.angle))   
-    # def rotate2(self, surface, angle, pivot, offset):
-    #     rotated_image = pygame.transform.rotozoom(surface, -angle, 1)  # Rotate the image.
-    #     rotated_offset = offset.rotate(angle)  # Rotate the offset vector.
-    #     # Add the offset vector to the center/pivot point to shift the rect.
-    #     rect = rotated_image.get_rect(center=pivot+rotated_offset)
-    #     return rotated_image, rect  # Return the rotated image and shifted rect.
-    # def rotate3(self, im, angle, pivot):
-    #     image = pygame.transform.rotate(im, -angle)
-    #     rect = image.get_rect()
-    #     rect.center = pivot
-    #     return image, rect
-
-    # Working Rotation Code
+    """
+    Cone Rotation code, works by rotating the cone surface around a fixed point defined by the pivot.
+    """
     def rotate4(self, image, origin, pivot, angle):
-        # Rotate cone using 
-
         image_rect = image.get_rect(center = (origin[0] + pivot[0], origin[1] + pivot[1]))
         offset_center_to_pivot = pygame.math.Vector2(origin) - image_rect.center
         rotated_offset = offset_center_to_pivot.rotate(-angle)
@@ -408,7 +328,6 @@ class Simulation:
 
                 if(a.infectious == True):
                     a.oimage = self.images.updateAgent("infectious")
-
                 if(a.infected == True):
                     a.oimage = self.images.updateAgent("infected")
 
@@ -430,16 +349,19 @@ class Simulation:
                     elif(a.breathedIn == True):
                         a.breatheOut()
 
-
-                # if(bool(np.random.choice([0,1],1,p=[0.99,0.01]))):
-                #     a.agentCough()
-
-                # if(bool(np.random.choice([0,1],1,p=[0.999,0.001]))):
-                #     a.agentSneeze()
+                if(bool(np.random.choice([0,1],1,p=[0.99,0.01]))):
+                    a.agentCough()
+                if(bool(np.random.choice([0,1],1,p=[0.999,0.001]))):
+                    a.agentSneeze()
 
                 c.image = c.reDrawCone(a.breathWidth, a.breathLength)
                 coneRect = c.rect
 
+                """
+                Diffusion grid colouring and infection ability.
+                First if statement deals with infected agents breathing into the grid.
+                Second if statement handles susceptible agents getting infected. 
+                """
                 if(a.infectious == True and a.breathedIn == True):
                     for idx, gridSqr in enumerate(self.gridRect):
                         if(coneRect.colliderect(gridSqr)):
@@ -451,7 +373,6 @@ class Simulation:
 
                             overlap = coneMask.overlap(sqrMask, offset)
                             if overlap:
-                                # Addition of pLevel should be based on distance to mouth, and then colour of square is dictated by total level.
                                 agentDist = a.center.distance_to(gridSqr.center)
                                 pLevel = (self.grid[idx].getPL()) + self.calcParticleLevel(agentDist)
                                 pLevel = (self.grid[idx].getPL()) + 1
@@ -466,12 +387,13 @@ class Simulation:
 
                             overlap = agentMask.overlap(sqrMask, offset)
                             if (overlap and a.breathedIn == False) :
-                                # Addition of pLevel should be based on distance to mouth, and then colour of square is dictated by total level.
                                 a.infected = a.infectRoomProbability()
-                        
-                # Loop through the cones and check to see if any of them are colliding with agents.
+                            
+                """
+                Agent checks all the cones that it current interacts with, and if one of them is infected whilst
+                the agent is breathing in, then the infectProbability() method is called.
+                """                        
                 for n, xc in enumerate(self.cones):
-                    # If agent collides with cone.
                     if(agentRect.colliderect(xc.rect) and idx != xc.idx):
                         coneMask = pygame.mask.from_surface(xc.image)
 
@@ -483,9 +405,7 @@ class Simulation:
                             if(self.agents[xc.idx].infectious == True and a.infectious == False and a.breathedIn == False):
                                 if(a.infected == False):
                                     a.infected = a.infectProbability()
-                            # a is being set to false so once its set to TRUE
-                            # we need to make sure once its set true it cannot be changed.
-                            #print(n, 'The two masks overlap!', overlap)
+
                 
                 a.move(self.delta, c.vCenter)
 
@@ -504,7 +424,6 @@ class Simulation:
             pygame.display.update() 
 
             pygame.display.flip()
-            # Value of 17 was taken from printing out self.clock.tick(60).
             self.delta = 17 * 0.001
 
 
