@@ -192,11 +192,9 @@ class Cone:
 
 class DiffusionGrid:
     def createGrid():
-        grid = []
-        for x in range(0, WIDTH, blockSize):
-            for y in range(0, HEIGHT, blockSize):
-                square = GridSquare(x, y)
-                grid.append(square)
+        rows = int(np.ceil(WIDTH / blockSize))
+        cols = int(np.ceil(HEIGHT / blockSize))
+        grid = [[GridSquare((j * blockSize), (i * blockSize)) for j in range(cols)] for i in range(rows)]
         return grid
 
 class GridSquare:
@@ -205,7 +203,7 @@ class GridSquare:
         self.opac = 0
         self.posX = x
         self.posY = y
-    
+
     def setPL(self, level):
         self.pL = level
     
@@ -245,11 +243,20 @@ class Simulation:
         
         self.cones = []
         self.agents = []
+
         self.grid = DiffusionGrid.createGrid()
-        self.gridRect = []
-        for idx,sqr in enumerate(self.grid):
-            rect = Rect(sqr.getPosX(), sqr.getPosY(), sqr.getPosX() + blockSize, sqr.getPosY() + blockSize)
-            self.gridRect.append(rect)
+        self.diffusedGrid = DiffusionGrid.createGrid()
+
+        numRows = len(self.grid)
+        numCols = len(self.grid[0])
+
+        self.gridRect = [[Rect(self.grid[x][y].getPosX(), self.grid[x][y].getPosY(), self.grid[x][y].getPosX() + blockSize, self.grid[x][y].getPosY() + blockSize) for y in range(numCols)] for x in range(numRows)]
+
+        self.diffGridRect = []
+        for x in range(numRows):
+            for y in range(numCols):
+                rect = Rect(self.grid[x][y].getPosX(), self.grid[x][y].getPosY(), self.grid[x][y].getPosX() + blockSize, self.grid[x][y].getPosY() + blockSize)
+                self.diffGridRect.append(rect)
 
         for i in range(numAgents):
             uAgent = Agent(self.images.drawAgent, [random.randrange(10, WIDTH -10), random.randrange(10, HEIGHT -10)])
@@ -293,20 +300,17 @@ class Simulation:
             return 0.25
 
     def calcColour(self, pL):
-        if (pL == 0):
-            return (255,255,255)
-        elif (pL > 0 and pL <= 1):
-            return (255,255,0)
-        elif(pL > 1 and pL <= 2):
-            return (255,150,0)
-        elif(pL > 2 and pL <= 3):
-            return (255,100,0)
-        else:
-            return (220,0,0)
+        if (pL == 0): return (255,255,255)
+        elif (pL > 0 and pL <= 1): return (255,255,0)
+        elif(pL > 1 and pL <= 2): return (255,150,0)
+        elif(pL > 2 and pL <= 3): return (255,100,0)
+        else: return (220,0,0)
 
 
     def simLoop(self):   
         tick = 0
+        numRows = len(self.grid)
+        numCols = len(self.grid[0])
 
         while True:
             tick = tick + 1
@@ -317,12 +321,11 @@ class Simulation:
                     
             self.surface.fill('white')
 
-            for idx, sqr in enumerate(self.grid):
-                color = (255,255,255)
-                if(sqr.getPL() > 0 ):
-                    color = self.calcColour(sqr.getPL())
-                gridImages = []
-                gridImages.append(pygame.draw.rect(self.surface, color, (sqr.getPosX(), sqr.getPosY(), sqr.getPosX() + blockSize, sqr.getPosY() + blockSize)))
+            for x in range(numRows):
+                for y in range(numCols):
+                    color = self.calcColour(self.grid[x][y].getPL())
+                    gridImages = []
+                    gridImages.append(pygame.draw.rect(self.surface, color, (self.grid[x][y].getPosX(), self.grid[x][y].getPosY(), self.grid[x][y].getPosX() + blockSize, self.grid[x][y].getPosY() + blockSize)))
             
             for idx, (a, c) in enumerate(zip(self.agents, self.cones)):
 
@@ -363,32 +366,36 @@ class Simulation:
                 Second if statement handles susceptible agents getting infected. 
                 """
                 if(a.infectious == True and a.breathedIn == True):
-                    for idx, gridSqr in enumerate(self.gridRect):
-                        if(coneRect.colliderect(gridSqr)):
-                            coneMask = pygame.mask.from_surface(c.image)
-                            sqrMask = pygame.mask.Mask((blockSize, blockSize))
-                            sqrMask.fill()
+                    for x in range(numRows):
+                        for y in range(numCols):
+                            if(coneRect.colliderect(self.gridRect[x][y])):
+                                coneMask = pygame.mask.from_surface(c.image)
+                                sqrMask = pygame.mask.Mask((blockSize, blockSize))
+                                sqrMask.fill()
 
-                            offset = (gridSqr.x - c.rect.x, gridSqr.y - c.rect.y)
+                                offset = (self.gridRect[x][y].x - c.rect.x, self.gridRect[x][y].y - c.rect.y)
 
-                            overlap = coneMask.overlap(sqrMask, offset)
-                            if overlap:
-                                agentDist = a.center.distance_to(gridSqr.center)
-                                pLevel = (self.grid[idx].getPL()) + self.calcParticleLevel(agentDist)
-                                pLevel = (self.grid[idx].getPL()) + 1
-                                self.grid[idx].setPL(pLevel)
+                                overlap = coneMask.overlap(sqrMask, offset)
+
+                                if overlap:
+                                    agentDist = a.center.distance_to(self.gridRect[x][y].center)
+                                    pLevel = (self.grid[x][y].getPL()) + self.calcParticleLevel(agentDist)
+                                    self.grid[x][y].setPL(pLevel)
+
                 elif(a.infectious == False):
-                    for idx, gridSqr in enumerate(self.gridRect):
-                        if(coneRect.colliderect(gridSqr)):
-                            sqrMask = pygame.mask.Mask((blockSize, blockSize))
-                            sqrMask.fill()
+                    for x in range(numRows):
+                        for y in range(numCols):
+                            if(coneRect.colliderect(self.gridRect[x][y])):
+                                if(coneRect.colliderect(self.gridRect[x][y])):
+                                    sqrMask = pygame.mask.Mask((blockSize, blockSize))
+                                    sqrMask.fill()
 
-                            offset = (gridSqr.x - a.rect.x, gridSqr.y - a.rect.y)
+                                    offset = (self.gridRect[x][y].x - a.rect.x, self.gridRect[x][y].y - a.rect.y)
 
-                            overlap = agentMask.overlap(sqrMask, offset)
-                            if (overlap and a.breathedIn == False) :
-                                a.infected = a.infectRoomProbability()
-                            
+                                    overlap = agentMask.overlap(sqrMask, offset)
+                                    if (overlap and a.breathedIn == False) :
+                                        a.infected = a.infectRoomProbability()
+    
                 """
                 Agent checks all the cones that it current interacts with, and if one of them is infected whilst
                 the agent is breathing in, then the infectProbability() method is called.
