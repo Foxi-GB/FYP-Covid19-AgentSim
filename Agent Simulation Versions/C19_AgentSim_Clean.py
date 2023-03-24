@@ -14,7 +14,7 @@ FPS = 60
 agentSize = 10
 breathWidth = 50
 breathLength = 50
-numAgents = 20
+numAgents = 5
 blockSize = 20
 
 class Image:
@@ -132,14 +132,18 @@ class Agent:
 
     def infectProbability(self):
         rand = bool(np.random.choice([0,1],1,p=[0.99995, 0.00005]))
-        if(rand == 1):
-            print("Agent Infection")
         return rand
     
-    def infectRoomProbability(self):
-        rand = bool(np.random.choice([0,1],1,p=[0.99995, 0.00005]))
-        if(rand == 1):
-            print("Room Infection")
+    def infectRoomProbability(self, level):
+        print(level)
+        if(level <= 2):
+            rand = False
+        if(level > 2 and level <= 4):
+            rand = bool(np.random.choice([0,1],1,p=[0.99980, 0.00020]))
+        if(level > 4 and level <= 7):
+            rand = bool(np.random.choice([0,1],1,p=[0.99950, 0.00050]))
+        else:
+            rand = bool(np.random.choice([0,1],1,p=[0.99925, 0.00075]))
         return rand
         
 
@@ -203,6 +207,12 @@ class GridSquare:
         self.opac = 0
         self.posX = x
         self.posY = y
+    
+    def addPL(self, level):
+        self.pL += level
+
+    def subPL(self, level):
+        self.pL -= level
 
     def setPL(self, level):
         self.pL = level
@@ -245,18 +255,12 @@ class Simulation:
         self.agents = []
 
         self.grid = DiffusionGrid.createGrid()
-        self.diffusedGrid = DiffusionGrid.createGrid()
 
         numRows = len(self.grid)
         numCols = len(self.grid[0])
 
         self.gridRect = [[Rect(self.grid[x][y].getPosX(), self.grid[x][y].getPosY(), self.grid[x][y].getPosX() + blockSize, self.grid[x][y].getPosY() + blockSize) for y in range(numCols)] for x in range(numRows)]
 
-        self.diffGridRect = []
-        for x in range(numRows):
-            for y in range(numCols):
-                rect = Rect(self.grid[x][y].getPosX(), self.grid[x][y].getPosY(), self.grid[x][y].getPosX() + blockSize, self.grid[x][y].getPosY() + blockSize)
-                self.diffGridRect.append(rect)
 
         for i in range(numAgents):
             uAgent = Agent(self.images.drawAgent, [random.randrange(10, WIDTH -10), random.randrange(10, HEIGHT -10)])
@@ -300,17 +304,17 @@ class Simulation:
             return 0.25
 
     def calcColour(self, pL):
-        if (pL == 0): return (255,255,255)
-        elif (pL > 0 and pL <= 1): return (255,255,0)
-        elif(pL > 1 and pL <= 2): return (255,150,0)
-        elif(pL > 2 and pL <= 3): return (255,100,0)
+        if (pL <= 0.5 ): return (255,255,255)
+        elif (pL > 0.5 and pL <= 2): return (255,255,0)
+        elif(pL > 2 and pL <= 4): return (255,150,0)
+        elif(pL > 4 and pL <= 7): return (255,100,0)
         else: return (220,0,0)
 
 
     def simLoop(self):   
         tick = 0
-        numRows = len(self.grid)
-        numCols = len(self.grid[0])
+        numRows = len(self.grid) - 1
+        numCols = len(self.grid[0]) - 1
 
         while True:
             tick = tick + 1
@@ -379,8 +383,7 @@ class Simulation:
 
                                 if overlap:
                                     agentDist = a.center.distance_to(self.gridRect[x][y].center)
-                                    pLevel = (self.grid[x][y].getPL()) + self.calcParticleLevel(agentDist)
-                                    self.grid[x][y].setPL(pLevel)
+                                    self.grid[x][y].addPL(self.calcParticleLevel(agentDist))
 
                 elif(a.infectious == False):
                     for x in range(numRows):
@@ -394,8 +397,26 @@ class Simulation:
 
                                     overlap = agentMask.overlap(sqrMask, offset)
                                     if (overlap and a.breathedIn == False) :
-                                        a.infected = a.infectRoomProbability()
-    
+                                        a.infected = a.infectRoomProbability(self.grid[x][y].getPL())
+
+                """
+                Diffusion System
+                """
+                if(tick %20 == 0):
+                    for x in range(numRows):
+                            for y in range(numCols):
+                                if(self.grid[x][y].getPL() != 0 ):
+                                    self.grid[x][y].setPL(self.grid[x][y].getPL() * 0.99)
+                                    if(self.grid[x+1][y].getPL()==0):self.grid[x+1][y].setPL(self.grid[x][y].getPL() * 0.20)
+                                    if(self.grid[x-1][y].getPL()==0):self.grid[x-1][y].setPL(self.grid[x][y].getPL() * 0.20)
+                                    if(self.grid[x][y+1].getPL()==0):self.grid[x][y+1].setPL(self.grid[x][y].getPL() * 0.20)
+                                    if(self.grid[x][y-1].getPL()==0):self.grid[x][y-1].setPL(self.grid[x][y].getPL() * 0.20)
+
+                                    if(self.grid[x+1][y+1].getPL()==0):self.grid[x+1][y+1].setPL(self.grid[x][y].getPL() * 0.20)
+                                    if(self.grid[x-1][y+1].getPL()==0):self.grid[x-1][y+1].setPL(self.grid[x][y].getPL() * 0.20)
+                                    if(self.grid[x+1][y-1].getPL()==0):self.grid[x+1][y-1].setPL(self.grid[x][y].getPL() * 0.20)
+                                    if(self.grid[x-1][y-1].getPL()==0):self.grid[x-1][y-1].setPL(self.grid[x][y].getPL() * 0.20)
+
                 """
                 Agent checks all the cones that it current interacts with, and if one of them is infected whilst
                 the agent is breathing in, then the infectProbability() method is called.
@@ -437,3 +458,62 @@ class Simulation:
 sim = Simulation("Covid 19 Agent Simulation", 120, (WIDTH,HEIGHT), 0)
 sim.simLoop()
 #cProfile.run('sim.simLoop()')
+
+
+"""
+Trial diffusion code. 
+"""
+ # for x in range(numRows):
+                #     for y in range(numCols):
+                #         if(self.grid[x][y].getPL() > 0.5):
+                #             basePL = self.grid[x][y].getPL()
+
+                #             sqrMain = basePL * 0.8
+                #             print("aqr", sqrMain)
+                #             sqrSides = basePL * 0.3
+                #             sqrDiag = basePL * 0.2
+
+                #             self.diffusedGrid[x][y].setPL(sqrMain) #self
+                #             if (x == 0):
+                                
+                #                 self.diffusedGrid[x-1][y].setPL(sqrSides) #down
+                #                 self.diffusedGrid[x][y+1].setPL(sqrSides) #right
+                #                 self.diffusedGrid[x][y-1].setPL(sqrSides) #left
+
+                #                 self.diffusedGrid[x+1][y+1].setPL(sqrDiag) #SE
+                #                 self.diffusedGrid[x+1][y-1].setPL(sqrDiag) #SW
+                #             elif (y == 0):
+                                
+                #                 self.diffusedGrid[x-1][y].setPL(sqrSides) #down
+                #                 self.diffusedGrid[x+1][y].setPL(sqrSides) #up
+                #                 self.diffusedGrid[x][y+1].setPL(sqrSides) #right
+
+                #                 self.diffusedGrid[x-1][y+1].setPL(sqrDiag) #NE
+                #                 self.diffusedGrid[x+1][y+1].setPL(sqrDiag) #SE
+                #             elif (x == numRows):
+                                
+                #                 self.diffusedGrid[x+1][y].setPL(sqrSides) #up
+                #                 self.diffusedGrid[x][y+1].setPL(sqrSides) #right
+                #                 self.diffusedGrid[x][y-1].setPL(sqrSides) #left
+
+                #                 self.diffusedGrid[x-1][y+1].setPL(sqrDiag) #NE
+                #                 self.diffusedGrid[x-1][y-1].setPL(sqrDiag) #NW
+                #             elif (y == numCols):
+                                
+                #                 self.diffusedGrid[x-1][y].setPL(sqrSides) #down
+                #                 self.diffusedGrid[x+1][y].setPL(sqrSides) #up
+                #                 self.diffusedGrid[x][y-1].setPL(sqrSides) #left
+
+                #                 self.diffusedGrid[x-1][y-1].setPL(sqrDiag) #NW
+                #                 self.diffusedGrid[x+1][y-1].setPL(sqrDiag) #SW
+                #             else:
+                                
+                #                 self.diffusedGrid[x-1][y].setPL(sqrSides) #down
+                #                 self.diffusedGrid[x+1][y].setPL(sqrSides) #up
+                #                 self.diffusedGrid[x][y+1].setPL(sqrSides) #right
+                #                 self.diffusedGrid[x][y-1].setPL(sqrSides) #left
+
+                #                 self.diffusedGrid[x-1][y+1].setPL(sqrDiag) #NE
+                #                 self.diffusedGrid[x+1][y+1].setPL(sqrDiag) #SE
+                #                 self.diffusedGrid[x-1][y-1].setPL(sqrDiag) #NW
+                #                 self.diffusedGrid[x+1][y-1].setPL(sqrDiag) #SW
