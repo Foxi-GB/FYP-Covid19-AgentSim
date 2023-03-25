@@ -10,15 +10,14 @@ import cProfile, pstats
 agentSize = 10 # Agent Radius
 cmPerPxl = 39 / (agentSize*2) # Average human width (cm) divided by agent size in pixels
 breathLength = 1 # In meters
-breathWidth = 1 # In meters
 breathAngle = 25 # In degrees
 # Environment Variables
 numAgents = 10
-numInfAgents = 0
+numInfAgents = 1
 blockSize = 20
 # Room Size in Meters
-Room_WIDTH = 10
-Room_LENGTH = 10
+Room_WIDTH = 5
+Room_LENGTH = 5
 
 FPS = 60
 WIDTH = int((Room_WIDTH*100) / cmPerPxl)
@@ -55,6 +54,8 @@ class Image:
 
 class Agent:
     def __init__(self, image, position):
+        self.statuses = ["breathingIn", "breathingOut", "coughing", "sneezing"]
+        self.status = self.statuses[0]
         self.oimage = image
         self.image = image
         self.rect = image.get_rect(center=position)
@@ -120,26 +121,29 @@ class Agent:
 
     def breatheIn(self):
         self.breathedIn = True
+        self.status = self.statuses[0]
         self.breathWidth = 10
         self.breathLength = (breathLength * 100) / 10
 
     def breatheOut(self):
         self.breathedIn = False
+        self.status = self.statuses[1]
         self.breathLength = (breathLength * 100) /cmPerPxl
         self.breathWidth = (np.tan(np.radians(breathAngle/2)) * self.breathLength) * 2
         
     def agentCough(self):
         self.breathedIn = False
+        self.status = self.statuses[2]
         self.breathLength = (breathLength * 200) / cmPerPxl
         self.breathWidth = (np.tan(np.radians(breathAngle/2)) * self.breathLength) * 2
 
     def agentSneeze(self):
         self.breathedIn = False
+        self.status = self.statuses[3]
         self.breathLength = (breathLength * 600) / cmPerPxl 
         self.breathWidth = (np.tan(np.radians(breathAngle/2)) * self.breathLength) * 2
 
     def infectProbability(self):
-        print("AGENT INFECT")
         rand = bool(np.random.choice([0,1],1,p=[0.99995, 0.00005]))
         return rand
     
@@ -158,8 +162,8 @@ class Agent:
 class Cone:
     def __init__(self, idx):
         self.idx = idx
-        self.image = self.init_DrawCone()
-        self.ocone = self.init_DrawCone()
+        self.image = self.init_DrawCone(1, 1)
+        self.ocone = self.init_DrawCone(1, 1)
         
         self.viewSize = 50
         self.view = self.viewCone(self.viewSize,self.viewSize)
@@ -172,7 +176,7 @@ class Cone:
         self.vector.from_polar((1, 0))
 
 
-    def init_DrawCone(self):
+    def init_DrawCone(self, breathWidth, breathLength):
         surface = pygame.Surface((breathWidth, breathLength ), pygame.SRCALPHA, 32)
         surface = surface.convert_alpha()
         pygame.draw.polygon(surface, "blue", ((0,breathWidth/2), (breathWidth,0), (breathWidth,breathLength)))
@@ -349,7 +353,6 @@ class Simulation:
                     a.oimage = self.images.updateAgent("infected")
 
                 self.surface.blit(a.image, a.rect)
-                agentMask = pygame.mask.from_surface(a.image)
                 
                 rI, rect = c.rotate4(c.image, a.center,(agentSize + (a.breathLength/2),0), -a.angle)
                 self.surface.blit(rI, rect)
@@ -361,9 +364,9 @@ class Simulation:
                 c.vCenter = pygame.Vector2(vRect.center)
 
                 if (tick % 3 == 0):
-                    if(a.breathedIn == False):
+                    if(a.status != "breathingIn"):
                         a.breatheIn()
-                    elif(a.breathedIn == True):
+                    elif(a.status == "breathingIn"):
                         a.breatheOut()
 
                 if(bool(np.random.choice([0,1],1,p=[0.99,0.01]))):
@@ -379,7 +382,7 @@ class Simulation:
                 First if statement deals with infected agents breathing into the grid.
                 Second if statement handles susceptible agents getting infected. 
                 """
-                if(a.infectious == True and a.breathedIn == False):
+                if(a.infectious == True and a.status != "breathingIn"):
                     for x in range(numRows):
                         for y in range(numCols):
                             if(coneRect.colliderect(self.gridRect[x][y])):
@@ -402,17 +405,18 @@ class Simulation:
                                 if(coneRect.colliderect(self.gridRect[x][y])):
                                     sqrMask = pygame.mask.Mask((blockSize, blockSize))
                                     sqrMask.fill()
+                                    agentMask = pygame.mask.from_surface(c.image)
 
                                     offset = (self.gridRect[x][y].x - a.rect.x, self.gridRect[x][y].y - a.rect.y)
 
                                     overlap = agentMask.overlap(sqrMask, offset)
-                                    if (overlap and a.breathedIn == False) :
+                                    if (overlap and a.status == "breathingIn") :
                                         a.infected = a.infectRoomProbability(self.grid[x][y].getPL())
 
                 """
                 Diffusing the Diffusion Grid
                 """
-                if(tick %20 == 0):
+                if(tick %120 == 0):
                     for x in range(numRows):
                             for y in range(numCols):
                                 if(self.grid[x][y].getPL() != 0 ):
@@ -435,12 +439,11 @@ class Simulation:
                     if(agentRect.colliderect(xc.rect) and idx != xc.idx):
                         coneMask = pygame.mask.from_surface(xc.image)
 
-                        offsetX = xc.rect.x - a.rect.x
-                        offsetY = xc.rect.y - a.rect.y
+                        offset = (xc.rect.x - a.rect.x, xc.rect.y - a.rect.y)
 
-                        overlap = agentMask.overlap(coneMask, (offsetX, offsetY))
+                        overlap = agentMask.overlap(coneMask, offset)
                         if overlap:
-                            if(self.agents[xc.idx].infectious == True and a.infectious == False and a.breathedIn == False):
+                            if(self.agents[xc.idx].infectious == True and a.infectious == False and a.status == "breathingIn"):
                                 if(a.infected == False):
                                     a.infected = a.infectProbability()
 
@@ -454,7 +457,7 @@ class Simulation:
                 binaryArray = self.createBinaryArray()
                 self.writeToCSV(binaryArray)
 
-            if tick == 5000:
+            if tick == 3600:
                 binaryArray = self.createBinaryArray()
                 self.writeToCSV(binaryArray)
                 pygame.quit()
