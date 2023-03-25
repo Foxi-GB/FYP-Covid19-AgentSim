@@ -17,6 +17,7 @@ breathLength = 50
 numAgents = 5
 blockSize = 20
 
+
 class Image:
     def __init__(self):
         self.drawAgent = self.drawAgent()
@@ -59,6 +60,7 @@ class Agent:
         self.turnSpeed = 40
         self.speed = 30
         self.angle = 0
+        self.stop = 0
 
         self.breathedIn = False
         self.breathWidth = breathWidth
@@ -88,19 +90,13 @@ class Agent:
             self.vector.from_polar((1, self.angle))
     
     def moveForward(self, delta, forward):
-        if(np.random.choice([0,1],1,p=[0.90,0.10]) == 0):
-            forward = 5
-        
-        if forward != 0:
-            self.center += forward * self.vector * delta * self.speed
-            self.rect.center = self.center
-
+        self.center += forward * self.vector * delta * self.speed
+        self.rect.center = self.center
         self.x = self.rect.center[0]
         self.y = self.rect.center[1]
 
         
-    def move(self, delta, coneCenter):
-        forward = 0
+    def move(self, delta, coneCenter, forward):
         rotate = 0
 
         if self.collisionCheck(coneCenter) == True:
@@ -108,7 +104,12 @@ class Agent:
         else:
             rotate += self.randRotate(rotate)
             self.rotateImage(delta, rotate)
-            self.moveForward(delta, forward)
+            if(bool(np.random.choice([0,1],1,p=[0.997,0.003]))):
+                self.moveForward(delta, 0)
+                self.stop = random.randrange(1,2) * 60
+            else:
+                self.moveForward(delta, forward)
+
 
     def breatheIn(self):
         self.breathWidth = 25
@@ -135,7 +136,6 @@ class Agent:
         return rand
     
     def infectRoomProbability(self, level):
-        print(level)
         if(level <= 2):
             rand = False
         if(level > 2 and level <= 4):
@@ -313,6 +313,7 @@ class Simulation:
 
     def simLoop(self):   
         tick = 0
+        pause = 0
         numRows = len(self.grid) - 1
         numCols = len(self.grid[0]) - 1
 
@@ -400,7 +401,7 @@ class Simulation:
                                         a.infected = a.infectRoomProbability(self.grid[x][y].getPL())
 
                 """
-                Diffusion System
+                Diffusing the Diffusion Grid
                 """
                 if(tick %20 == 0):
                     for x in range(numRows):
@@ -434,8 +435,10 @@ class Simulation:
                                 if(a.infected == False):
                                     a.infected = a.infectProbability()
 
-                
-                a.move(self.delta, c.vCenter)
+                if(a.stop != 0):
+                    a.stop -= 1
+                else:
+                    a.move(self.delta, c.vCenter, 5)
 
 
             if (tick % 60) == 0:
