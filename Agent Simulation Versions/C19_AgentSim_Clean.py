@@ -1,22 +1,29 @@
-import pygame, sys, random, csv
+import pygame, sys, random, csv, math
 from pygame.locals import *
 import numpy as np
 import cProfile, pstats 
 
+
+
+## Simulation Variables
+# Agent Variables
+agentSize = 10 # Agent Radius
+cmPerPxl = 39 / (agentSize*2) # Average human width (cm) divided by agent size in pixels
+breathLength = 1 # In meters
+breathWidth = 1 # In meters
+breathAngle = 25 # In degrees
+# Environment Variables
+numAgents = 10
+numInfAgents = 0
+blockSize = 20
 # Room Size in Meters
 Room_WIDTH = 10
 Room_LENGTH = 10
 
-WIDTH = int((Room_WIDTH*100) / 2)
-HEIGHT = int((Room_LENGTH*100) / 2)
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
 FPS = 60
-agentSize = 10
-breathWidth = 50
-breathLength = 50
-numAgents = 5
-blockSize = 20
-
+WIDTH = int((Room_WIDTH*100) / cmPerPxl)
+HEIGHT = int((Room_LENGTH*100) / cmPerPxl)
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
 
 class Image:
     def __init__(self):
@@ -63,11 +70,11 @@ class Agent:
         self.stop = 0
 
         self.breathedIn = False
-        self.breathWidth = breathWidth
-        self.breathLength = breathLength
+        self.breathWidth = 0
+        self.breathLength = 0
 
         self.infected = False
-        self.infectious = bool(np.random.choice([0,1],1,p=[0.60,0.40])) 
+        self.infectious = False
 
     def collisionCheck(self, coneCenter):
         cX = coneCenter[0]
@@ -112,38 +119,39 @@ class Agent:
 
 
     def breatheIn(self):
-        self.breathWidth = 25
-        self.breathLength = 25
         self.breathedIn = True
+        self.breathWidth = 10
+        self.breathLength = (breathLength * 100) / 10
 
     def breatheOut(self):
-        self.breathWidth = 55
-        self.breathLength = 55
         self.breathedIn = False
-
+        self.breathLength = (breathLength * 100) /cmPerPxl
+        self.breathWidth = (np.tan(np.radians(breathAngle/2)) * self.breathLength) * 2
+        
     def agentCough(self):
         self.breathedIn = False
-        self.breathWidth = 110
-        self.breathLength = 110
+        self.breathLength = (breathLength * 200) / cmPerPxl
+        self.breathWidth = (np.tan(np.radians(breathAngle/2)) * self.breathLength) * 2
 
     def agentSneeze(self):
         self.breathedIn = False
-        self.breathWidth = 330  
-        self.breathLength = 330
+        self.breathLength = (breathLength * 600) / cmPerPxl 
+        self.breathWidth = (np.tan(np.radians(breathAngle/2)) * self.breathLength) * 2
 
     def infectProbability(self):
+        print("AGENT INFECT")
         rand = bool(np.random.choice([0,1],1,p=[0.99995, 0.00005]))
         return rand
     
     def infectRoomProbability(self, level):
         if(level <= 2):
             rand = False
-        if(level > 2 and level <= 4):
-            rand = bool(np.random.choice([0,1],1,p=[0.99980, 0.00020]))
-        if(level > 4 and level <= 7):
-            rand = bool(np.random.choice([0,1],1,p=[0.99950, 0.00050]))
+        elif(level > 2 and level <= 4):
+            rand = bool(np.random.choice([0,1],1,p=[0.999980, 0.000020]))
+        elif(level > 4 and level <= 7):
+            rand = bool(np.random.choice([0,1],1,p=[0.999950, 0.000050]))
         else:
-            rand = bool(np.random.choice([0,1],1,p=[0.99925, 0.00075]))
+            rand = bool(np.random.choice([0,1],1,p=[0.999925, 0.000075]))
         return rand
         
 
@@ -165,15 +173,15 @@ class Cone:
 
 
     def init_DrawCone(self):
-        surface = pygame.Surface(((breathWidth), breathLength ), pygame.SRCALPHA, 32)
+        surface = pygame.Surface((breathWidth, breathLength ), pygame.SRCALPHA, 32)
         surface = surface.convert_alpha()
         pygame.draw.polygon(surface, "blue", ((0,breathWidth/2), (breathWidth,0), (breathWidth,breathLength)))
         return surface
 
-    def reDrawCone(self, agentBreathWidth, agentBreathLength):
+    def reDrawCone(self, agentBreathLength, agentBreathWidth):
         surface = pygame.Surface(((agentBreathWidth), agentBreathLength ), pygame.SRCALPHA, 32)
         surface = surface.convert_alpha()
-        pygame.draw.polygon(surface, "blue", ((0,agentBreathWidth/2), (agentBreathWidth,0), (agentBreathWidth,agentBreathLength)))
+        pygame.draw.polygon(surface, "blue", ((0,agentBreathLength/2), (agentBreathWidth,0), (agentBreathWidth,agentBreathLength)))
         return surface
     
     def viewCone(self, viewWidth, viewLength):
@@ -289,10 +297,11 @@ class Simulation:
     
     def infectiousTestGen(self, agents):
         for idx, x in enumerate (agents):
-            if(idx == 0 or idx == 1):
-                x.infectious = True
+            if numInfAgents < len(agents):
+                for i in range (0, numInfAgents):
+                    agents[i].infectious = True
             else:
-                x.infectious = False
+                print("Request number of infected agents is greater than the total number of agents.")
         return agents
     
     def calcParticleLevel(self, dist):
@@ -342,7 +351,7 @@ class Simulation:
                 self.surface.blit(a.image, a.rect)
                 agentMask = pygame.mask.from_surface(a.image)
                 
-                rI, rect = c.rotate4(c.image, a.center,(agentSize + (a.breathWidth/2),0), -a.angle)
+                rI, rect = c.rotate4(c.image, a.center,(agentSize + (a.breathLength/2),0), -a.angle)
                 self.surface.blit(rI, rect)
                 c.rect = rect
                 agentRect = a.rect
@@ -370,7 +379,7 @@ class Simulation:
                 First if statement deals with infected agents breathing into the grid.
                 Second if statement handles susceptible agents getting infected. 
                 """
-                if(a.infectious == True and a.breathedIn == True):
+                if(a.infectious == True and a.breathedIn == False):
                     for x in range(numRows):
                         for y in range(numCols):
                             if(coneRect.colliderect(self.gridRect[x][y])):
