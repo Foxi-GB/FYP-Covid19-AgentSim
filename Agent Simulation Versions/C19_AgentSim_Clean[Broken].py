@@ -12,9 +12,9 @@ cmPerPxl = 39 / (agentSize*2) # Average human width (cm) divided by agent size i
 breathLength = 1 # In meters
 breathAngle = 25 # In degrees
 # Environment Variables
-numAgents = 10
+numAgents = 2
 numInfAgents = 1
-blockSize = 20
+blockSize = 10
 # Room Size in Meters
 Room_WIDTH = 5
 Room_LENGTH = 5
@@ -148,12 +148,12 @@ class Agent:
         return rand
     
     def infectRoomProbability(self, level):
-        if(level <= 2):
+        if(level <= 300):
             rand = False
-        elif(level > 2 and level <= 4):
-            rand = bool(np.random.choice([0,1],1,p=[0.999980, 0.000020]))
-        elif(level > 4 and level <= 7):
-            rand = bool(np.random.choice([0,1],1,p=[0.999950, 0.000050]))
+        elif(level > 300 and level <= 2000):
+            rand = bool(np.random.choice([0,1],1,p=[0.99995, 0.00005]))
+        elif(level > 2000 and level <= 5000):
+            rand = bool(np.random.choice([0,1],1,p=[0.99995, 0.00005]))
         else:
             rand = bool(np.random.choice([0,1],1,p=[0.999925, 0.000075]))
         return rand
@@ -208,15 +208,15 @@ class Cone:
 
 class DiffusionGrid:
     def createGrid():
-        rows = int(np.ceil(WIDTH / blockSize))
-        cols = int(np.ceil(HEIGHT / blockSize))
+        rows = int(np.ceil(Room_WIDTH * 100 / blockSize))
+        cols = int(np.ceil(Room_LENGTH * 100 / blockSize))
         grid = [[GridSquare((j * blockSize), (i * blockSize)) for j in range(cols)] for i in range(rows)]
         return grid
 
 class GridSquare:
     def __init__(self, x, y):
         self.pL = 0
-        self.opac = 0
+        self.age = 0
         self.posX = x
         self.posY = y
     
@@ -308,25 +308,38 @@ class Simulation:
                 print("Request number of infected agents is greater than the total number of agents.")
         return agents
     
-    def calcParticleLevel(self, dist):
-        if dist >= 0 and dist <= 100:
-            return 1
-        if dist >100 and dist <= 200:
-            return 0.5
-        else:
-            return 0.25
+    def calcParticleLevel(self, dist, status):
+        level = 0
+        dist *= cmPerPxl
+        if(status == "breathingIn"):
+            return level
+        elif(status == "breathingOut"):
+            level = 100 / dist
+        elif(status == "coughing"):
+            level = 123000 / dist
+        elif(status == "sneezing"):
+            level = 533000 / dist
+        return level
+
 
     def calcColour(self, pL):
-        if (pL <= 0.5 ): return (255,255,255)
-        elif (pL > 0.5 and pL <= 2): return (255,255,0)
-        elif(pL > 2 and pL <= 4): return (255,150,0)
-        elif(pL > 4 and pL <= 7): return (255,100,0)
+        # if(pL > 1000):
+        #     pL = 1000
+        # pL = pL/1000
+        # pLDiff = 1.0 - pL
+        # redCol = min(255, pL*2 * 255)
+        # greenCol = min(255, pLDiff*2 * 255)
+        # col = (redCol, greenCol, 0)
+        # return col
+        if (pL <= 100 ): return (255,255,255)
+        elif (pL > 100 and pL <= 300): return (255,255,0)
+        elif(pL > 300 and pL <= 1000): return (255,150,0)
+        elif(pL > 1000 and pL <= 1000): return (255,100,0)
         else: return (220,0,0)
 
 
     def simLoop(self):   
         tick = 0
-        pause = 0
         numRows = len(self.grid) - 1
         numCols = len(self.grid[0]) - 1
 
@@ -354,15 +367,6 @@ class Simulation:
 
                 self.surface.blit(a.image, a.rect)
                 
-                rI, rect = c.rotate4(c.image, a.center,(agentSize + (a.breathLength/2),0), -a.angle)
-                self.surface.blit(rI, rect)
-                c.rect = rect
-                agentRect = a.rect
-
-                vRI, vRect = c.rotate4(c.view, a.center,(agentSize + (c.viewSize/2),0), -a.angle)
-                self.surface.blit(vRI, vRect)
-                c.vCenter = pygame.Vector2(vRect.center)
-
                 if (tick % 3 == 0):
                     if(a.status != "breathingIn"):
                         a.breatheIn()
@@ -375,6 +379,16 @@ class Simulation:
                     a.agentSneeze()
 
                 c.image = c.reDrawCone(a.breathWidth, a.breathLength)
+
+                rI, rect = c.rotate4(c.image, a.center,(agentSize + (a.breathLength/2),0), -a.angle)
+                self.surface.blit(rI, rect)
+                c.rect = rect
+                agentRect = a.rect
+
+                vRI, vRect = c.rotate4(c.view, a.center,(agentSize + (c.viewSize/2),0), -a.angle)
+                self.surface.blit(vRI, vRect)
+                c.vCenter = pygame.Vector2(vRect.center)
+
                 coneRect = c.rect
 
                 """
@@ -396,7 +410,8 @@ class Simulation:
 
                                 if overlap:
                                     agentDist = a.center.distance_to(self.gridRect[x][y].center)
-                                    self.grid[x][y].addPL(self.calcParticleLevel(agentDist))
+                                    self.grid[x][y].addPL(self.calcParticleLevel(agentDist, a.status))
+                                    self.grid[x][y].age = 0
 
                 elif(a.infectious == False):
                     for x in range(numRows):
@@ -416,20 +431,26 @@ class Simulation:
                 """
                 Diffusing the Diffusion Grid
                 """
-                if(tick %120 == 0):
+                if(tick %50 == 0):
                     for x in range(numRows):
                             for y in range(numCols):
-                                if(self.grid[x][y].getPL() != 0 ):
-                                    self.grid[x][y].setPL(self.grid[x][y].getPL() * 0.99)
-                                    if(self.grid[x+1][y].getPL()==0):self.grid[x+1][y].setPL(self.grid[x][y].getPL() * 0.20)
-                                    if(self.grid[x-1][y].getPL()==0):self.grid[x-1][y].setPL(self.grid[x][y].getPL() * 0.20)
-                                    if(self.grid[x][y+1].getPL()==0):self.grid[x][y+1].setPL(self.grid[x][y].getPL() * 0.20)
-                                    if(self.grid[x][y-1].getPL()==0):self.grid[x][y-1].setPL(self.grid[x][y].getPL() * 0.20)
+                                    if(self.grid[x][y].age == 5):
+                                        self.grid[x][y].setPL(self.grid[x][y].getPL() * 0.54) # falling to an average of 54% within 5 s of generation
+                                    elif(5 < self.grid[x][y].age < 300):
+                                        self.grid[x][y].setPL(self.grid[x][y].getPL() * 0.9994) # decrease on average by 20% (19%) over the next 5 mins
+                                    elif(self.grid[x][y].age > 300):
+                                        self.grid[x][y].setPL(self.grid[x][y].getPL() * 0.995)
+                                    #self.grid[x][y].setPL(self.grid[x][y].getPL() * 0.9)
+                                    self.grid[x+1][y].addPL(self.grid[x][y].getPL() * 0.000625)
+                                    self.grid[x-1][y].addPL(self.grid[x][y].getPL() * 0.000625)
+                                    self.grid[x][y+1].addPL(self.grid[x][y].getPL() * 0.000625)
+                                    self.grid[x][y-1].addPL(self.grid[x][y].getPL() * 0.000625)
 
-                                    if(self.grid[x+1][y+1].getPL()==0):self.grid[x+1][y+1].setPL(self.grid[x][y].getPL() * 0.20)
-                                    if(self.grid[x-1][y+1].getPL()==0):self.grid[x-1][y+1].setPL(self.grid[x][y].getPL() * 0.20)
-                                    if(self.grid[x+1][y-1].getPL()==0):self.grid[x+1][y-1].setPL(self.grid[x][y].getPL() * 0.20)
-                                    if(self.grid[x-1][y-1].getPL()==0):self.grid[x-1][y-1].setPL(self.grid[x][y].getPL() * 0.20)
+                                    self.grid[x+1][y+1].addPL(self.grid[x][y].getPL() * 0.000625)
+                                    self.grid[x-1][y+1].addPL(self.grid[x][y].getPL() * 0.000625)
+                                    self.grid[x+1][y-1].addPL(self.grid[x][y].getPL() * 0.000625)
+                                    self.grid[x-1][y-1].addPL(self.grid[x][y].getPL() * 0.000625)
+                                    self.grid[x][y].age += 1
 
                 """
                 Agent checks all the cones that it current interacts with, and if one of them is infected whilst
@@ -457,7 +478,7 @@ class Simulation:
                 binaryArray = self.createBinaryArray()
                 self.writeToCSV(binaryArray)
 
-            if tick == 3600:
+            if tick == 86400:
                 binaryArray = self.createBinaryArray()
                 self.writeToCSV(binaryArray)
                 pygame.quit()
