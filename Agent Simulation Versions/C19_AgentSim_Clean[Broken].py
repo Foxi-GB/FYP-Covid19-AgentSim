@@ -457,7 +457,7 @@ class Simulation:
                 the agent is breathing in, then the infectProbability() method is called.
                 """                        
                 for n, xc in enumerate(self.cones):
-                    if(agentRect.colliderect(xc.rect) and idx != xc.idx):
+                    if(agentRect.colliderect(xc.rect) and idx != xc.idx and a.status == "breathingIn"):
                         coneMask = pygame.mask.from_surface(xc.image)
 
                         offset = (xc.rect.x - a.rect.x, xc.rect.y - a.rect.y)

@@ -13,12 +13,12 @@ cmPerPxl = 39 / (agentSize*2) # Average human width (cm) divided by agent size i
 breathLength = 1 # In meters
 breathAngle = 25 # In degrees
 # Environment Variables
-numAgents = 2
+numAgents = 6
 numInfAgents = 1
 blockSize = 20
 # Room Size in Meters
-Room_WIDTH = 10
-Room_LENGTH = 10
+Room_WIDTH = 4
+Room_LENGTH = 7
 
 FPS = 60
 WIDTH = int((Room_WIDTH*100) / cmPerPxl)
@@ -149,14 +149,14 @@ class Agent:
         return rand
     
     def infectRoomProbability(self, level):
-        if(level <= 2):
+        if(level <= 300):
             rand = False
-        elif(level > 2 and level <= 4):
-            rand = bool(np.random.choice([0,1],1,p=[0.999980, 0.000020]))
-        elif(level > 4 and level <= 7):
-            rand = bool(np.random.choice([0,1],1,p=[0.999950, 0.000050]))
+        elif(level > 300 and level <= 1000):
+            rand = bool(np.random.choice([0,1],1,p=[0.99995, 0.00005]))
+        elif(level > 2000 and level <= 5000):
+            rand = bool(np.random.choice([0,1],1,p=[0.99993, 0.00007]))
         else:
-            rand = bool(np.random.choice([0,1],1,p=[0.999925, 0.000075]))
+            rand = bool(np.random.choice([0,1],1,p=[0.99991, 0.00009]))
         return rand
         
 
@@ -217,12 +217,13 @@ class DiffusionGrid:
 class GridSquare:
     def __init__(self, x, y):
         self.pL = 0
-        self.opac = 0
+        self.age = 0
         self.posX = x
         self.posY = y
     
-    def addPL(self, level):
+    def addPL(self, level, age):
         self.pL += level
+        self.age = age
 
     def subPL(self, level):
         self.pL -= level
@@ -311,11 +312,13 @@ class Simulation:
     
     def calcParticleLevel(self, dist, status):
         level = 0
-        dist *= cmPerPxl
+        # dist *= cmPerPxl
+        dist /= 10
         if(status == "breathingIn"):
             return level
         elif(status == "breathingOut"):
-            level = 100 / dist
+            level = 1000 / dist
+            print(dist, level)
         elif(status == "coughing"):
             level = 123000 / dist
         elif(status == "sneezing"):
@@ -327,8 +330,9 @@ class Simulation:
         if(gradientMap == True):
             if(pL > 1000):
                 pL = 1000
-            if(pL < 1):
-                pLgrnDiff = 1.0 - pL
+            if(pL <= 100):
+                if(pL < 1): pL = 0
+                pLgrnDiff = 1.0 - (pL/100)
                 greenCol0 = min(255, pLgrnDiff*2 * 255)
                 col = (greenCol0, 255, greenCol0) # R, G, B 
                 return col
@@ -340,10 +344,10 @@ class Simulation:
                 col = (redCol, greenCol, 0)
             return col
         else:
-            if (pL <= 0.5 ): return (255,255,255)
-            elif (pL > 0.5 and pL <= 2): return (255,255,0)
-            elif(pL > 2 and pL <= 4): return (255,150,0)
-            elif(pL > 4 and pL <= 7): return (255,100,0)
+            if (pL <= 100 ): return (255,255,255)
+            elif (pL > 100 and pL <= 300): return (255,255,0)
+            elif(pL > 300 and pL <= 1000): return (255,150,0)
+            elif(pL > 1000 and pL <= 1000): return (255,100,0)
             else: return (220,0,0)
 
 
@@ -420,10 +424,12 @@ class Simulation:
                                 overlap = coneMask.overlap(sqrMask, offset)
 
                                 if overlap:
-                                    agentDist = a.center.distance_to(self.gridRect[x][y].center)
-                                    self.grid[x][y].addPL(self.calcParticleLevel(agentDist, a.status))
+                                    agentDist = np.sqrt((c.rect.centerx - self.gridRect[x][y].centerx)**2 + (c.rect.centery - self.gridRect[x][y].centery)**2 )
+                                    if(agentDist < 1): agentDist = 1
+                                    #agentDist = a.center.distance_to(self.gridRect[x][y].center)
+                                    self.grid[x][y].addPL(self.calcParticleLevel(int(agentDist), a.status), 0)
 
-                elif(a.infectious == False):
+                elif(a.infectious == False and a.status == "breathingIn"):
                     for x in range(numRows):
                         for y in range(numCols):
                             if(coneRect.colliderect(self.gridRect[x][y])):
@@ -441,20 +447,47 @@ class Simulation:
                 """
                 Diffusing the Diffusion Grid
                 """
-                if(tick %200 == 0):
-                    for x in range(numRows):
-                            for y in range(numCols):
-                                if(self.grid[x][y].getPL() != 0 ):
-                                    self.grid[x][y].setPL(self.grid[x][y].getPL() * 0.8)
-                                    if(self.grid[x+1][y].getPL()==0):self.grid[x+1][y].setPL(self.grid[x][y].getPL() * 0.025)
-                                    if(self.grid[x-1][y].getPL()==0):self.grid[x-1][y].setPL(self.grid[x][y].getPL() * 0.025)
-                                    if(self.grid[x][y+1].getPL()==0):self.grid[x][y+1].setPL(self.grid[x][y].getPL() * 0.025)
-                                    if(self.grid[x][y-1].getPL()==0):self.grid[x][y-1].setPL(self.grid[x][y].getPL() * 0.025)
+                # if(tick %200 == 0):
+                for x in range(numRows):
+                        for y in range(numCols):
+                            pL = self.grid[x][y].getPL()
+                            adj = 0
+                            dia = 0
+                            age = 0 
+                            if(pL > 0.0):
+                                # if(self.grid[x][y].age <= 5):
+                                #     self.grid[x][y].setPL(pL * 0.892)
+                                #     adj = 0.02025
+                                #     dia = 0.00675
+                                # elif(5 < self.grid[x][y].age <= 300):
+                                #     self.grid[x][y].setPL(pL * 0.933) # decrease on average by 20% (19%) over the next 5 mins
+                                #     adj = 0.0125625
+                                #     dia = 0.0041875
+                                # elif(self.grid[x][y].age > 300):
+                                #     self.grid[x][y].setPL(pL * 0.995)
+                                #     adj = 0.0009375
+                                #     dia = 0.0003125
 
-                                    if(self.grid[x+1][y+1].getPL()==0):self.grid[x+1][y+1].setPL(self.grid[x][y].getPL() * 0.025)
-                                    if(self.grid[x-1][y+1].getPL()==0):self.grid[x-1][y+1].setPL(self.grid[x][y].getPL() * 0.025)
-                                    if(self.grid[x+1][y-1].getPL()==0):self.grid[x+1][y-1].setPL(self.grid[x][y].getPL() * 0.025)
-                                    if(self.grid[x-1][y-1].getPL()==0):self.grid[x-1][y-1].setPL(self.grid[x][y].getPL() * 0.025)
+                                if(self.grid[x][y].age < 600):
+                                    self.grid[x][y].setPL(pL * 0.870)
+                                    adj = 0.024375
+                                    dia = 0.008125
+                                elif(self.grid[x][y].age >600):
+                                    self.grid[x][y].setPL(pL * 0.995)
+                                    adj = 0.0009375
+                                    dia = 0.0003125
+                                
+                                # self.grid[x][y].setPL(pL * 0.8)
+                                self.grid[x+1][y].addPL(pL * adj, age)
+                                self.grid[x-1][y].addPL(pL * adj, age)
+                                self.grid[x][y+1].addPL(pL * adj, age)
+                                self.grid[x][y-1].addPL(pL * adj, age)
+
+                                self.grid[x+1][y+1].addPL(pL * dia, age)
+                                self.grid[x-1][y+1].addPL(pL * dia, age)
+                                self.grid[x+1][y-1].addPL(pL * dia, age)
+                                self.grid[x-1][y-1].addPL(pL * dia, age)
+                                self.grid[x][y].age += 1
 
                 """
                 Agent checks all the cones that it current interacts with, and if one of them is infected whilst
@@ -463,6 +496,7 @@ class Simulation:
                 for n, xc in enumerate(self.cones):
                     if(agentRect.colliderect(xc.rect) and idx != xc.idx):
                         coneMask = pygame.mask.from_surface(xc.image)
+                        agentMask = pygame.mask.from_surface(c.image)
 
                         offset = (xc.rect.x - a.rect.x, xc.rect.y - a.rect.y)
 
@@ -475,14 +509,14 @@ class Simulation:
                 if(a.stop != 0):
                     a.stop -= 1
                 else:
-                    a.move(self.delta, c.vCenter, 5)
+                    a.move(self.delta, c.vCenter, 70)
 
 
             if (tick % 60) == 0:
                 binaryArray = self.createBinaryArray()
                 self.writeToCSV(binaryArray)
 
-            if tick == 3600:
+            if tick == 14400:
                 binaryArray = self.createBinaryArray()
                 self.writeToCSV(binaryArray)
                 pygame.quit()
@@ -503,6 +537,17 @@ sim.simLoop()
 """
 Trial diffusion code. 
 """
+# if(0 < self.grid[x][y].getPL() <= 0.001 ):
+                            #     self.grid[x][y].setPL(0.001)
+                            # if(self.grid[x][y].age < 5):
+                            #     self.grid[x][y].setPL(pL)
+                            # if(self.grid[x][y].age == 5):
+                            #     self.grid[x][y].setPL(pL * 0.54) # falling to an average of 54% within 5 s of generation
+                            # elif(5 < self.grid[x][y].age < 300):
+                            #     self.grid[x][y].setPL(pL * 0.933) # decrease on average by 20% (19%) over the next 5 mins
+                            # elif(self.grid[x][y].age > 300):
+                            #     self.grid[x][y].setPL(pL * 0.995)
+
  # for x in range(numRows):
                 #     for y in range(numCols):
                 #         if(self.grid[x][y].getPL() > 0.5):
