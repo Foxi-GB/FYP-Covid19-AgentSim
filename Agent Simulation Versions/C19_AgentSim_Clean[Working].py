@@ -6,6 +6,7 @@ import cProfile, pstats
 
 
 ## Simulation Variables
+gradientMap = True # Toggle the colour-coding method
 # Agent Variables
 agentSize = 10 # Agent Radius
 cmPerPxl = 39 / (agentSize*2) # Average human width (cm) divided by agent size in pixels
@@ -323,11 +324,27 @@ class Simulation:
 
 
     def calcColour(self, pL):
-        if (pL <= 0.5 ): return (255,255,255)
-        elif (pL > 0.5 and pL <= 2): return (255,255,0)
-        elif(pL > 2 and pL <= 4): return (255,150,0)
-        elif(pL > 4 and pL <= 7): return (255,100,0)
-        else: return (220,0,0)
+        if(gradientMap == True):
+            if(pL > 1000):
+                pL = 1000
+            if(pL < 1):
+                pLgrnDiff = 1.0 - pL
+                greenCol0 = min(255, pLgrnDiff*2 * 255)
+                col = (greenCol0, 255, greenCol0) # R, G, B 
+                return col
+            else:
+                pL = pL/1000
+                pLDiff = 1.0 - pL
+                redCol = min(255, pL*2 * 255)
+                greenCol = min(255, pLDiff*2 * 255)
+                col = (redCol, greenCol, 0)
+            return col
+        else:
+            if (pL <= 0.5 ): return (255,255,255)
+            elif (pL > 0.5 and pL <= 2): return (255,255,0)
+            elif(pL > 2 and pL <= 4): return (255,150,0)
+            elif(pL > 4 and pL <= 7): return (255,100,0)
+            else: return (220,0,0)
 
 
     def simLoop(self):   
@@ -424,20 +441,20 @@ class Simulation:
                 """
                 Diffusing the Diffusion Grid
                 """
-                if(tick %120 == 0):
+                if(tick %200 == 0):
                     for x in range(numRows):
                             for y in range(numCols):
                                 if(self.grid[x][y].getPL() != 0 ):
-                                    self.grid[x][y].setPL(self.grid[x][y].getPL() * 0.99)
-                                    if(self.grid[x+1][y].getPL()==0):self.grid[x+1][y].setPL(self.grid[x][y].getPL() * 0.20)
-                                    if(self.grid[x-1][y].getPL()==0):self.grid[x-1][y].setPL(self.grid[x][y].getPL() * 0.20)
-                                    if(self.grid[x][y+1].getPL()==0):self.grid[x][y+1].setPL(self.grid[x][y].getPL() * 0.20)
-                                    if(self.grid[x][y-1].getPL()==0):self.grid[x][y-1].setPL(self.grid[x][y].getPL() * 0.20)
+                                    self.grid[x][y].setPL(self.grid[x][y].getPL() * 0.8)
+                                    if(self.grid[x+1][y].getPL()==0):self.grid[x+1][y].setPL(self.grid[x][y].getPL() * 0.025)
+                                    if(self.grid[x-1][y].getPL()==0):self.grid[x-1][y].setPL(self.grid[x][y].getPL() * 0.025)
+                                    if(self.grid[x][y+1].getPL()==0):self.grid[x][y+1].setPL(self.grid[x][y].getPL() * 0.025)
+                                    if(self.grid[x][y-1].getPL()==0):self.grid[x][y-1].setPL(self.grid[x][y].getPL() * 0.025)
 
-                                    if(self.grid[x+1][y+1].getPL()==0):self.grid[x+1][y+1].setPL(self.grid[x][y].getPL() * 0.20)
-                                    if(self.grid[x-1][y+1].getPL()==0):self.grid[x-1][y+1].setPL(self.grid[x][y].getPL() * 0.20)
-                                    if(self.grid[x+1][y-1].getPL()==0):self.grid[x+1][y-1].setPL(self.grid[x][y].getPL() * 0.20)
-                                    if(self.grid[x-1][y-1].getPL()==0):self.grid[x-1][y-1].setPL(self.grid[x][y].getPL() * 0.20)
+                                    if(self.grid[x+1][y+1].getPL()==0):self.grid[x+1][y+1].setPL(self.grid[x][y].getPL() * 0.025)
+                                    if(self.grid[x-1][y+1].getPL()==0):self.grid[x-1][y+1].setPL(self.grid[x][y].getPL() * 0.025)
+                                    if(self.grid[x+1][y-1].getPL()==0):self.grid[x+1][y-1].setPL(self.grid[x][y].getPL() * 0.025)
+                                    if(self.grid[x-1][y-1].getPL()==0):self.grid[x-1][y-1].setPL(self.grid[x][y].getPL() * 0.025)
 
                 """
                 Agent checks all the cones that it current interacts with, and if one of them is infected whilst
