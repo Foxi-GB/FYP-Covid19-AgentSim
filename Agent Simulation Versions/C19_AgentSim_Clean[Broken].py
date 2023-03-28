@@ -437,9 +437,9 @@ class Simulation:
                                     if(self.grid[x][y].age == 5):
                                         self.grid[x][y].setPL(self.grid[x][y].getPL() * 0.54) # falling to an average of 54% within 5 s of generation
                                     elif(5 < self.grid[x][y].age < 300):
-                                        self.grid[x][y].setPL(self.grid[x][y].getPL() * 0.9994) # decrease on average by 20% (19%) over the next 5 mins
+                                        self.grid[x][y].setPL(self.grid[x][y].getPL() * 0.953) # decrease on average by 20% (19%) over the next 5 mins
                                     elif(self.grid[x][y].age > 300):
-                                        self.grid[x][y].setPL(self.grid[x][y].getPL() * 0.995)
+                                        self.grid[x][y].setPL(self.grid[x][y].getPL() * 0.98)
                                     #self.grid[x][y].setPL(self.grid[x][y].getPL() * 0.9)
                                     self.grid[x+1][y].addPL(self.grid[x][y].getPL() * 0.000625)
                                     self.grid[x-1][y].addPL(self.grid[x][y].getPL() * 0.000625)
@@ -457,7 +457,7 @@ class Simulation:
                 the agent is breathing in, then the infectProbability() method is called.
                 """                        
                 for n, xc in enumerate(self.cones):
-                    if(agentRect.colliderect(xc.rect) and idx != xc.idx and a.status == "breathingIn"):
+                    if(agentRect.colliderect(xc.rect) and idx != xc.idx):
                         coneMask = pygame.mask.from_surface(xc.image)
 
                         offset = (xc.rect.x - a.rect.x, xc.rect.y - a.rect.y)

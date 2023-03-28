@@ -212,7 +212,7 @@ class Cone:
 
         self.rect = self.image.get_rect()
         self.center = pygame.Vector2(self.rect.center)
-        self.angle = 25
+        self.angle = 90
         self.vector = pygame.Vector2()
         self.vector.from_polar((1, 0))
 
@@ -494,7 +494,7 @@ class Simulation:
                 binaryArray = self.createBinaryArray()
                 self.writeToCSV(binaryArray)
 
-            if tick == 5000:
+            if tick == 3600:
                 binaryArray = self.createBinaryArray()
                 self.writeToCSV(binaryArray)
                 pygame.quit()
@@ -510,4 +510,4 @@ class Simulation:
 
 sim = Simulation("Covid 19 Agent Simulation", 120, (WIDTH,HEIGHT), 0)
 sim.simLoop()
-#cProfile.run('sim.simLoop()')
+cProfile.run('sim.simLoop()')
